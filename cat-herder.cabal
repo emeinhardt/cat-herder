@@ -1,0 +1,453 @@
+cabal-version:         3.0
+name:                  cat-herder
+version:               0.1.0.0
+synopsis:
+  Free categories with constraints + sized n-ary monoidal products.
+description:
+
+  == What
+
+  The main feature of @cat-herder@ is a granular typeclass hierarchy for
+  different category types that supports finite, homogeneously-typed /n/-ary
+  monoidal products tagged with a type-level @Nat@ indicating the size of the
+  product.
+
+  The package also offers typeclasses that support freely lifting a set of
+  primitive morphisms into various types of category in the hierarchy.
+
+  This package is principally inspired by
+  [Conal Elliott's papers](http://conal.net/) and
+  [blog posts](http://conal.net/blog/posts/circuits-as-a-bicartesian-closed-category),
+  [Megacz's earlier work on generalized arrows](http://www.megacz.com/berkeley/research),
+  and the
+  [@constrained-categories@](https://hackage.haskell.org/package/constrained-categories)
+  package. These are also excellent places to look for additional context or
+  background.
+
+  == Why
+
+  The motivating use case is facilitating embedded domain-specific language
+  (EDSL) development. In this context, there are five main concerns or
+  feature-sets that motivate this package.
+
+   1. __Constraints can be liberating.__ Typeclasses with an associated
+      constraint (e.g.
+      [§4.2, Sculthorpe et al, 2014](neilsculthorpe.com/publications/constrained-monad-problem.pdf#page=6))
+      make it possible to use or easier to use typeclasses with a wider variety
+      of concrete datatypes, and this has many consequences for flexibility in
+      domain modeling and implementation.
+   2. __@Control.Arrow@ without @arr@.__ Hughes's venerable @Arrow@ typeclass
+      bundles a lot of functionality in one package, but there are many domains
+      where you don't want to be obligated to admit and deal with arbitrary
+      terms of type @(->)@ in your EDSL.
+   3. __Choose your (co)product functor.__ Most category/profunctor libraries
+      either limit the user to @(,)@ ± @Either@ or to a variation on cons-lists
+      for representing (co)products. If you can live without
+      heterogeneously-typed products, then using trees of @(,)@/@Either@ of any
+      size to simulate a collection can quickly become unwieldily; on the other
+      hand, you may not want to be limited to linked-lists to model monoidal
+      products.
+   4. __Type-level sizes make more functions total and better model many
+      domains.__ The classic example of dependent types is a sized collection
+      type where a type-level natural number indicates the cardinality; there
+      are many unsafe functions on collections whose runtime errors or more
+      complex return type (an error @Applicative@) becomes a compile-time bug in
+      this setting. For modeling many domains, finitary @Representable@ and
+      @Traversable@ container types are a natural choice for a product functor,
+      and there many plausibly good choices within that class.
+   5. __Linear-/affinely-typed domain modeling.__ Most category/profunctor
+      libraries make a pragmatic trade-off and bundle logically independent
+      capabilities into a smaller typeclass hierarchy. On the other hand, if you
+      want to model any domain where resource accounting is desirable or
+      critical, then you /want/ a finer-grained hierarchy where copying,
+      destruction, and permutations can be more carefully tracked.
+
+  Those are the 5 reasons that motivate this package. However, the package is
+  also motivated as an experiment.
+
+    - Flexibility, type-safety, and moving domain modeling into types come at a
+      price: /sized containers/ and /constrained typeclasses/ add a lot of
+      complexity to satisfying GHC, sometimes limit what can be expressed, or
+      increase the amount of work necessary to express something compared to a
+      setting without either of those two features.
+
+    - Similarly, a finer-grained typeclass hierarchy not specialized to @(->)@
+      means more typeclasses, more possible derivations (and fewer obvious
+      defaults available), more verbose types, and more difficult type
+      inference.
+
+  Some of these costs are borne principally in development of the library and
+  not necessarily by downstream use: for example, nearly every constrained
+  typeclass has a default trivial constraint, and between that and e.g. choosing
+  a specific concrete type at any site of use, GHC has little or no trouble
+  reasoning about verbose and intimidating-looking piles of constraints.
+
+  In any case, as an experiment, the primary goal of the package currently is to
+  flesh out basic functionality for productive EDSL development to assess the
+  cost/benefit ratio of design decisions: this may motivate a significant
+  rewrite, giving up constraints, or focusing more effort on unsized containers.
+
+
+
+  === Back up, why model EDSLs with categories, though?
+
+    1. __Program against interfaces, not implementations:__ As
+    [Gavronovic et al](https://arxiv.org/abs/2402.15332) put it, category theory
+    offers "a battle-tested system of interfaces that are learned once, and then
+    reliably applied across...fields."
+
+    2. __Domain modeling:__ Modeling your EDSL in terms of categories can offer
+    clearer domain modeling for some applications:
+
+        - You have a very precise notion of what your domain is, someone has
+          written how to model it categorically, and that's the domain encoding
+          you want your DSL to reflect.
+
+        - Your domain may involve terms that are essentially function-like, with
+          input and output and with a composition operation, but the only things
+          you can do with an actual function @a -> b@ (composition, application,
+          and wrapping it in a product type together with annotations) are
+          /not enough/ to adequately model your domain.
+
+        - Your domain may involve terms that are essentially function-like but
+          @->@ can express /too much/: you don't want arbitrary @->@ terms in
+          your DSL (they may be meaningless or impossible to handle in the
+          general case), and hence you need a separate function-like abstraction
+          that offers control over this that e.g. @Control.Arrow@ and
+          @Data.Profunctor@ do not. (See the resources by Megacz for more on
+          this.)
+
+    3. __Reasoning about code:__ More generally, modeling your domain
+    categorically may make it easier to reason equationally about the
+    relationship between the meaning of a program and what the encoding of that
+    program can or must be. Check out the Elliott papers in the __Resources__
+    section for more on this; if you'd prefer to see some of similar ideas
+    without category theory, check out
+    [Elliott (2009)](http://conal.net/papers/type-class-morphisms) instead.
+    Finally, if papers are not your speed and you find recursion schemes a
+    friendlier domain to read about, if you read enough blog posts about
+    recursion schemes you will encounter related ideas ("program calculation")
+    in explanations of why particular recursion schemes have the form they do.
+
+    4. __There ain't no variable bookkeeping like no variable bookkeeping:__
+    More mechanically speaking, DSLs modeling languages as categories can trade
+    the complexity of bookkeeping associated with variables (binding, scope,
+    reasoning about shadowing or renaming or fresh identifiers, etc.) for
+    [tacit ("point-free") style](https://www.youtube.com/watch?v=seVSlKazsNk).
+    Tacit style may not be an obvious fit for some applications, and as a matter
+    of taste it tends to be polarizing in a similar way that lisp's syntax is.
+    Stack-based programming languages and any domain that can be usefully
+    described in terms of "dataflow programming" are candidates for a natural
+    fit, modulo the upfront cost of the learning curve.
+
+  === The big picture
+
+  Riffing on #4 above, one way of thinking about the change in perspective is
+  moving from modeling a program fragment as
+
+   - An expression tree of values.
+   - A container of terms — a functor in the "blue-collar functional programmer"
+     sense of @Data.Functor@.
+
+  to modeling a program fragment as
+
+   - A path in a directed hypergraph where vertices are types (not values) and
+     edges are function-like terms.
+
+       - In a Cartesian closed category like @(->)@, currying lets us think of
+         programs as paths in a directed graph (no proper hyperedges); giving
+         this up (or not making it the default assumption) means some of the
+         tree-like structure of programs comes back into focus.
+
+  Another way of putting this is that this package most closely models
+  [multi-sorted ("polychromatic") PROPs](https://ncatlab.org/nlab/show/PROP) or
+  [concategories](https://www.cl.cam.ac.uk/events/syco/2/slides/levy.pdf), and
+  hence can be specialized to model multicategories, operads, Lawvere theories,
+  or polycategories.
+
+  Finally, in domains with nested products, another natural way of thinking
+  about the resulting kind of categories modeled by this package is an APL-like
+  concatenative ("stack-based") array language where reshaping, reranking, and
+  broadcasting combinators (e.g. as provided by
+  [orthotope](https://hackage.haskell.org/package/orthotope)) are a natural
+  medium for describing many domain computations and a substitute for
+  combinators a functional programmer without array language exposure might
+  otherwise reach for — and which may not even be available in a category that
+  isn't Cartesian closed.
+
+
+  == Haddock readability
+
+  In spite of my best efforts to compensate, none of the available Haddock
+  themes have CSS that can cope with
+
+    - Large (e.g. explicitly kinded) parameters.
+    - Large constraint lists.
+
+    (There are relatively old issues in the @haddock@ repository pointing this
+    out.) As a result, for some questions it will be easier to browse source
+    files rather than the Haddock docs.
+
+   == Give me details ± examples!
+
+   1. See the modules with @Examples@ in the path to get your hands dirty, or...
+
+   2. Take a look at the
+      [github README](https://github.com/emeinhardt/cat-herder) for more
+      information at a bit more granularity than this cabal project
+      description, or
+
+   3. Take a look at the root module @Cat@ for a documentation entry-point that
+      dives deeper yet into the derivation of the basic types of this package and
+      an overview of the typeclass hierarchy it presents.
+
+license:               MIT
+license-file:          LICENSE
+author:                Eric Meinhardt
+maintainer:            ericmeinhardt@gmail.com
+copyright:             2024
+homepage:              https://github.com/emeinhardt/cat-herder
+bug-reports:           https://github.com/emeinhardt/cat-herder/issues
+category:              Data
+build-type:            Simple
+extra-doc-files:       CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/emeinhardt/cat-herder/cat-herder.git
+
+common warnings
+  ghc-options:
+    -Wall -Wdefault -Wno-orphans -Wredundant-constraints -Wincomplete-uni-patterns -Wincomplete-record-updates -Wcompat
+
+library
+  import:              warnings
+  ghc-options:
+    -O2 -threaded "-fplugin GHC.TypeLits.KnownNat.Solver"
+                  "-fplugin GHC.TypeLits.Normalise"
+                  "-fconstraint-solver-iterations=5"
+  default-language:    GHC2021
+  default-extensions:
+    DataKinds
+    DerivingStrategies
+    DerivingVia
+    NoImplicitPrelude
+    NoStarIsType
+    PatternSynonyms
+    TypeFamilies
+    UnicodeSyntax
+  other-extensions:
+    AllowAmbiguousTypes
+    DefaultSignatures
+    QuantifiedConstraints
+    UndecidableInstances
+    UndecidableSuperClasses
+  hs-source-dirs:      src
+  exposed-modules:
+    Cat
+
+    Cat.Operators
+    Cat.Orthotope
+    Cat.Orthotope.Extras
+    Cat.VectorSized
+
+    Cat.Unsized
+
+    Cat.Unsized.Functor
+    Cat.Unsized.Profunctor
+    Cat.Unsized.Monad
+    Cat.Unsized.Comonad
+    Cat.Unsized.Bikleisli
+
+    Cat.Unsized.Semigroupoid
+    Cat.Unsized.Semigroupoid.Class
+    Cat.Unsized.Semigroupoid.Instances
+    Cat.Unsized.Semigroupoid.Free
+    Cat.Unsized.Semigroupoid.Free.Data
+    Cat.Unsized.Semigroupoid.Free.Instances
+
+    Cat.Unsized.Category
+    Cat.Unsized.Category.Class
+    Cat.Unsized.Category.Instances
+    Cat.Unsized.Category.Free
+    Cat.Unsized.Category.Free.Data
+    Cat.Unsized.Category.Free.Instances
+
+
+    Cat.Sized
+
+    Cat.Sized.Functor
+    Cat.Sized.Functor.Monoidal
+    Cat.Sized.Profunctor
+    Cat.Sized.Monad
+    Cat.Sized.Comonad
+    Cat.Sized.Bikleisli
+
+    Cat.Sized.Semigroupoid
+    Cat.Sized.Semigroupoid.Class
+    Cat.Sized.Semigroupoid.Instances
+    Cat.Sized.Semigroupoid.Internal
+    Cat.Sized.Semigroupoid.Free
+    Cat.Sized.Semigroupoid.Free.Data
+    Cat.Sized.Semigroupoid.Free.Instances
+
+    Cat.Sized.Category
+    Cat.Sized.Category.Class
+    Cat.Sized.Category.Instances
+    Cat.Sized.Category.Free
+    Cat.Sized.Category.Free.Data
+    Cat.Sized.Category.Free.Instances
+
+    Cat.Sized.Monoidal
+    Cat.Sized.Monoidal.Class
+    Cat.Sized.Monoidal.Instances
+    Cat.Sized.Monoidal.Data
+    Cat.Sized.Monoidal.Free
+    Cat.Sized.Monoidal.Free.Data
+    Cat.Sized.Monoidal.Free.Instances
+
+    Cat.Sized.Braided
+    Cat.Sized.Braided.Class
+    Cat.Sized.Braided.Instances
+    Cat.Sized.Braided.Free
+    Cat.Sized.Braided.Free.Data
+    Cat.Sized.Braided.Free.Instances
+
+    Cat.Sized.Diagonal
+    Cat.Sized.Diagonal.Class
+    Cat.Sized.Diagonal.Instances
+    Cat.Sized.Diagonal.Free
+
+    Cat.Sized.Semicartesian
+    Cat.Sized.Semicartesian.Class
+    Cat.Sized.Semicartesian.Instances
+    Cat.Sized.Semicartesian.Free
+
+    -- Cat.Sized.CopyDelete
+    -- Cat.Sized.CopyDelete.Class
+    -- Cat.Sized.CopyDelete.Instances
+    -- Cat.Sized.CopyDelete.Free
+    -- Cat.Sized.CopyDelete.Free.Data
+    -- Cat.Sized.CopyDelete.Free.Instances
+
+    Cat.Sized.Cartesian
+    Cat.Sized.Cartesian.Class
+    Cat.Sized.Cartesian.Instances
+    Cat.Sized.Cartesian.Free
+    Cat.Sized.Cartesian.Free.Data
+    Cat.Sized.Cartesian.Free.Instances
+
+
+    Cat.Sized.Codiagonal
+    Cat.Sized.Codiagonal.Class
+    Cat.Sized.Codiagonal.Instances
+    Cat.Sized.Codiagonal.Free
+
+    Cat.Sized.Semicocartesian
+    Cat.Sized.Semicocartesian.Class
+    Cat.Sized.Semicocartesian.Instances
+    Cat.Sized.Semicocartesian.Free
+
+    Cat.Sized.Cocartesian
+    Cat.Sized.Cocartesian.Class
+    Cat.Sized.Cocartesian.Instances
+
+    Cat.Sized.Zero
+    Cat.Sized.Zero.Class
+    Cat.Sized.Zero.Instances
+
+    Cat.Sized.Bimonoidal
+    Cat.Sized.Bimonoidal.Class
+    Cat.Sized.Bimonoidal.Instances
+    -- Cat.Sized.Bimonoidal.Free
+    -- Cat.Sized.Bimonoidal.Free.Data
+    -- Cat.Sized.Bimonoidal.Free.Instances
+
+    Cat.Sized.Semiadditive
+    Cat.Sized.Semiadditive.Class
+    Cat.Sized.Semiadditive.Instances
+    -- Cat.Sized.Semiadditive.Free
+    -- Cat.Sized.Semiadditive.Free.Data
+    -- Cat.Sized.Semiadditive.Free.Instances
+
+    -- Cat.Sized.Additive
+    -- Cat.Sized.Additive.Class
+    -- Cat.Sized.Additive.Instances
+    -- Cat.Sized.Additive.Free
+    -- Cat.Sized.Additive.Free.Data
+    -- Cat.Sized.Additive.Free.Instances
+
+    Cat.Sized.Distributive
+    Cat.Sized.Distributive.Class
+    Cat.Sized.Distributive.Instances
+
+    -- Cat.Sized.Bicartesian
+    -- Cat.Sized.Bicartesian.Class
+    -- Cat.Sized.Bicartesian.Instances
+    -- Cat.Sized.Bicartesian.Free
+    -- Cat.Sized.Bicartesian.Free.Data
+    -- Cat.Sized.Bicartesian.Free.Instances
+
+
+    Cat.Unsized.Examples.Arith
+    Cat.Sized.Examples.Arith
+    Cat.Sized.Examples.Circuit
+    -- Cat.Sized.Examples.Markov
+
+  build-depends:
+      base                      >= 4.17.2.1 && <5.0
+    , base-unicode-symbols      == 0.2.*
+    , pretty                    == 1.1.*
+    , pretty-simple             == 4.1.*
+
+    , composition               == 1.0.*
+    -- , optics
+
+    , trivial-constraint        == 0.7.*
+
+    , tagged                    == 0.8.*
+    -- , finitary
+    , finite-typelits           == 0.1.*
+    , ghc-typelits-knownnat     >= 0.7.7
+    , ghc-typelits-natnormalise >= 0.7.7
+
+    -- , recursion-schemes         >= 5.2
+    -- , free                      >= 5.1
+    , comonad                   == 5.*
+    -- , data-fix
+    -- , compdata
+    -- , functor-combinators
+
+    , transformers-compat       == 0.7.*
+    , transformers              == 0.6.*
+    , mtl                       == 2.3.*
+
+    , distributive              == 0.6.*
+    , adjunctions               == 4.4.*
+    -- , pointed
+
+    -- , profunctors
+
+    -- , these
+    -- , semialign
+    -- , semialign-extras
+
+    -- , indexed-traversable
+    -- , witherable
+
+    , vector                    >= 0.12
+    , vector-sized              >= 1.5
+    , orthotope                 == 0.1.*
+
+    -- , finite-table
+    -- , short-vec
+    -- , short-vec-lens
+    -- , sing
+
+    , algebraic-graphs          == 0.7.*
+    -- , involutive-semigroups
+    -- , rings
+    -- , numhask
+    -- -- , algebra
+    -- -- , semirings
+    -- -- , semiring-num

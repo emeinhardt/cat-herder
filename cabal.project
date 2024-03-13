@@ -1,0 +1,11 @@
+packages:
+  ./*.cabal
+
+allow-newer: involutive-semigroups:base, involutive-semigroups:text, involutive-semigroups:bytestring
+
+package *
+  haddock-html: true
+  haddock-hyperlink-source: true
+  haddock-quickjump: true
+  haddock-internal: true
+  haddock-options: --built-in-themes --use-unicode --theme=/home/emeinhardt/Babel/archive-haskell/purity/purity

@@ -1,0 +1,17 @@
+.cache
+.env
+.envrc
+dist/*
+target/
+*.o
+dist-newstyle/*
+*/dist-newstyle/*
+cabal.project.local~
+*/cabal.project.local~
+*.hoo
+*.warn
+TAGS
+docs/doc
+.direnv/*
+result*
+result-*
