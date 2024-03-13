@@ -2,7 +2,19 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 {- | The source for this module is a minimal example of using this package; the
-Haddocks are not meant to be a substitute for viewing the source. -}
+Haddocks are not meant to be a substitute for viewing the source.
+
+The module 'Cat.Sized.Examples.Arith' is a very mild extension of this module
+that uses 'sized' (type-level @Nat@-indexed) products. See the 'Razor' example
+in the README for additional context about what is here and why.
+
+Neither this nor the 'sized' variation on Hutton's Razor document or explain
+everything one might want to know about why things are the way they are in the
+module: for example, the role of object constraints and how the 'HasObject'
+typeclass (or the 'ObjectOf' associated type synonym) link a primitive morphism
+to the object constraints for a free category type. For deeper exposition on
+details like this, see the introduction to Boolean circuits (combinational
+logic) in "Cat.Sized.Examples.Circuit" or the discussion in the README. -}
 
 module Cat.Unsized.Examples.Arith where
 
@@ -12,18 +24,12 @@ import Prelude hiding
   , foldMap
   )
 
-import Data.Kind (Type)
 import Data.Bool (bool)
 
 import Cat.Unsized.Functor
-  ( (:~>)
-  , HFunctor ( hfmap
-             )
-  , Fix ( In
-        , out
+  ( Fix ( In
         )
   , cata
-  -- , ana
   )
 
 
@@ -46,7 +52,6 @@ import Cat.Unsized.Category.Free.Data
          )
   , Cat'
   , mkAlg
-  , foldMap'
   )
 
 import Cat.Unsized.Category.Instances ()
@@ -54,7 +59,7 @@ import Cat.Unsized.Category.Free.Instances ()
 
 
 
-data ArithFunc (a ∷ Type) (b ∷ Type) where
+data ArithFunc a b where
   Lit    ∷ (ArithPrim b) ⇒ b   →     ArithFunc ()   b
   Inc    ∷                           ArithFunc Int  Int
   Dec    ∷                           ArithFunc Int  Int
@@ -83,39 +88,27 @@ noOp ∷ ( ObjectOf ArithFunc a )
 noOp = Id
 
 -- | ≈ @const (1 ∷ Int)@
-one ∷ ( ObjectOf ArithFunc ()
-      , ObjectOf ArithFunc Int
-      )
-  ⇒ FreeArith () Int
+one ∷ FreeArith () Int
 one = Emb $ Lit 1
 
 -- | ≈ @const (2 ∷ Int)@
-two ∷ ( ObjectOf ArithFunc ()
-      , ObjectOf ArithFunc Int
-      )
-  ⇒ FreeArith () Int
+two ∷ FreeArith () Int
 two = Emb $ Lit 2
 
 -- | ≈ @subtract (1 ∷ Int)@
-sub1 ∷ ( ObjectOf ArithFunc Int )
-  ⇒ FreeArith Int Int
+sub1 ∷ FreeArith Int Int
 sub1 = Emb Dec
 
 -- | ≈ @const (2 - (1 ∷ Int))@
-alsoOne ∷ ( ObjectOf ArithFunc () )
-  ⇒ FreeArith () Int
+alsoOne ∷ FreeArith () Int
 alsoOne = sub1 `Of` two
 
 -- | ≈ @(== 1) ∘ (const (2 - (1 ∷ Int)))@
-oneIsOne ∷ ( ObjectOf ArithFunc () )
-  ⇒ FreeArith () Bool
+oneIsOne ∷ FreeArith () Bool
 oneIsOne = Emb (EqlTo 1) `Of` alsoOne
 
 -- | ≈ @bool (0 ∷ Int) (1 ∷ Int)@
-boolToInt ∷ ( ObjectOf ArithFunc Bool
-            , ObjectOf ArithFunc Int
-            )
-  ⇒ FreeArith Bool Int
+boolToInt ∷ FreeArith Bool Int
 boolToInt = Emb (Ite 0 1)
 
 {- |
@@ -125,29 +118,20 @@ boolToInt = Emb (Ite 0 1)
 ∘ id
 @
 -}
-alsoOneIsOne ∷ ( ObjectOf ArithFunc ()
-               , ObjectOf ArithFunc Int
-               )
-  ⇒ FreeArith () Int
+alsoOneIsOne ∷ FreeArith () Int
 alsoOneIsOne = boolToInt `Of` oneIsOne `Of` noOp
 
 
 
 evalArithPrim ∷ ∀ a b.
-  ( -- ObjectOf ArithFunc a
-  -- , ObjectOf ArithFunc b
-  -- , Object   (->) a
-  -- , Object   (->) b
-  -- , (∀ x. ObjectOf ArithFunc x ⇒ Object' (->) x)
-  )
-  ⇒ ArithFunc a b
+    ArithFunc a b
   → (a → b)
-evalArithPrim (Lit @b_ b)     = const    b
-evalArithPrim  Inc            = (+       1)
-evalArithPrim  Dec            = subtract 1
-evalArithPrim (Add     a)     = (+       a)
-evalArithPrim (EqlTo @a_ a  ) = (==      a)
-evalArithPrim (Ite   @b_ f t) = bool f t
+evalArithPrim (Lit     b) = const    b
+evalArithPrim  Inc        = (+       1)
+evalArithPrim  Dec        = subtract 1
+evalArithPrim (Add     a) = (+       a)
+evalArithPrim (EqlTo   a) = (==      a)
+evalArithPrim (Ite   f t) = bool   f t
 
 
 {- |
@@ -164,20 +148,10 @@ evalFreeArith ∷ ∀ a b.
               ( -- Any of the next three pairs of constraints suffice:
                 ArithPrim a
               , ArithPrim b
-                -- ObjectOf ArithFunc a
+              --   ObjectOf ArithFunc a
               -- , ObjectOf ArithFunc b
               --   Object FreeArith a
               -- , Object FreeArith b
-
-              -- ObjectOf ArithFunc a
-              -- , ObjectOf ArithFunc b
-              -- , ∀ o. ObjectOf ArithFunc o ⇒ Object' (->) o
-              --   Object FreeArith a
-              -- , Object FreeArith b
-              -- , ∀ o. Object FreeArith o ⇒ Object' (->) o
-              --   ArithPrim a
-              -- , ArithPrim b
-              -- , ∀ o. ArithPrim o ⇒ Object' (->) o
               )
               ⇒ FreeArith a b
               → (a → b)
@@ -202,41 +176,27 @@ noOp' ∷ ( ObjectOf ArithFunc a )
 noOp' = In IdF
 
 -- | ≈ @const (1 ∷ Int)@
-one' ∷ ( ObjectOf ArithFunc ()
-       , ObjectOf ArithFunc Int
-       -- , Object FreeArith' ()
-       -- , Object FreeArith' Int
-       )
-  ⇒ FreeArith' () Int
+one' ∷ FreeArith' () Int
 one' = In $ EmbF $ Lit 1
 
 -- | ≈ @const (2 ∷ Int)@
-two' ∷ ( ObjectOf ArithFunc ()
-       , ObjectOf ArithFunc Int
-       )
-  ⇒ FreeArith' () Int
+two' ∷ FreeArith' () Int
 two' = In $ EmbF $ Lit 2
 
 -- | ≈ @subtract (1 ∷ Int)@
-sub1' ∷ ( ObjectOf ArithFunc Int )
-  ⇒ FreeArith' Int Int
+sub1' ∷ FreeArith' Int Int
 sub1' = In $ EmbF Dec
 
 -- | ≈ @const (2 - (1 ∷ Int))@
-alsoOne' ∷ ( ObjectOf ArithFunc () )
-  ⇒ FreeArith' () Int
+alsoOne' ∷ FreeArith' () Int
 alsoOne' = In $ sub1' `OfF` two'
 
 -- | ≈ @(== 1) ∘ (const (2 - (1 ∷ Int)))@
-oneIsOne' ∷ ( ObjectOf ArithFunc () )
-  ⇒ FreeArith' () Bool
+oneIsOne' ∷ FreeArith' () Bool
 oneIsOne' = In $ In (EmbF (EqlTo 1)) `OfF` alsoOne'
 
 -- | ≈ @bool (0 ∷ Int) (1 ∷ Int)@
-boolToInt' ∷ ( ObjectOf ArithFunc Bool
-             , ObjectOf ArithFunc Int
-             )
-  ⇒ FreeArith' Bool Int
+boolToInt' ∷ FreeArith' Bool Int
 boolToInt' = In $ EmbF (Ite 0 1)
 
 {- |
@@ -246,10 +206,7 @@ boolToInt' = In $ EmbF (Ite 0 1)
 ∘ id
 @
 -}
-alsoOneIsOne' ∷ ( ObjectOf ArithFunc ()
-                , ObjectOf ArithFunc Int
-                )
-  ⇒ FreeArith' () Int
+alsoOneIsOne' ∷ FreeArith' () Int
 alsoOneIsOne' = In $ boolToInt' `OfF` In (oneIsOne' `OfF` noOp')
 
 
@@ -265,16 +222,7 @@ it :: Bool
 it :: Int
 -}
 evalFreeArith' ∷ ∀ a b.
-  ( ArithPrim a, ArithPrim b
-  -- , Object (FreeArithF (->)) a
-  -- , Object (FreeArithF (->)) b
-  -- , (∀ x. Object (Fix η) x ⇒ Object' (η (Fix η)) x)
-  -- , (∀ x. Object FreeArith' x ⇒ Object' (FreeArithF (->)) x) -- restore
-  , (∀ x. Object FreeArith' x ⇒ Object' (->) x)
-  -- , (∀ x. ArithPrim x ⇒ Object' (CatF ArithFunc (->)) x)
-  -- HFunctor (CatF ArithFunc)
-  )
-  -- ⇒ (CatF ArithFunc (->) :~> (->))
+  (∀ x. Object FreeArith' x ⇒ Object' (->) x)
   ⇒ FreeArith' a b
   → (a → b)
 evalFreeArith' = cata $ mkAlg evalArithPrim

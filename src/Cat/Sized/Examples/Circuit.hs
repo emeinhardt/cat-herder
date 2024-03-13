@@ -34,25 +34,47 @@ The module contains
 
 As a first introduction to the package, combinator conventions in this module are:
 
- - Homophonous synonyms for Prelude combinators are used in expressions in the
-   object language (EDSL). For example,
+ - Homophonous ("homographic") synonyms for Prelude combinators are used in 
+   expressions in the object language (DSL). For example,
 
-      - @(.@) refers to "Cat.Sized.Semigroupoid" composition.
+      - @(.)@ refers to "Cat.Sized.Semigroupoid" composition.
       - @id@ refers to the identity morphism from "Cat.Sized.Category".
-      - @(***)@ refers to monoidal tensor product from "Cat.Sized.Monoidal".
+      - @(***)@ refers to the monoidal tensor product from "Cat.Sized.Monoidal".
+      - @(&&&)@ refers to the "fork" operation from "Cat.Sized.Diagonal.Class" —
+        except in one or two cases where it is explicitly qualified to indicate
+        that the "Control.Arrow" combinator is used instead.
 
- - "Control.Arrow" combinators +/- explicit qualifiers (e.g. @Prelude.\_@) are used
-   for expressions in the metalanguage — @(->)@.
+ - "Control.Arrow" operators — '(>>>)', '(<<<)' — are used for composition in
+   the metalanguage — @(->)@.
 
  - @IcelandJack@'s mixfix operator hack (see '-|', '|->') is used to make large
    morphisms a bit more readable, especially in source code:
 
->   k a b  -- A morphism in the category k from a to b.
+> -- A morphism in the category k from a to b:
+>
+>   k a b
 > ≡ a `k` b
 > ≡ a -| k |-> b
-
->   Circuit VS.Vector 3 2 Bool Bool  -- A morphism from a vector of 3 Bools to one of 2 Bools.
+>
+>
+> -- A morphism from a vector of 3 Bools to a vector of 2 Bools:
+>
+>   Circuit VS.Vector 3 2 Bool Bool
 > ≡ Bool -| Circuit VS.Vector 3 2 |-> Bool
+>
+> -- Now the source object of the morphism and its multiplicity are on the 
+> -- left, and information about the target object and its multiplicity are to 
+> -- the right.
+
+Above you see a typical morphism type in this package:
+
+ - Such a morphism /always/ maps from a homogeneously-typed product to a
+   homogeneously-typed product, and the monoidal product is part of the type of
+   the morphism. 
+ - In general though, morphisms don't have to be to and from the same 
+   types — a type like @Bool@ doesn't have to show up on both sides, and we can
+   have arbitrarily nested products of products.
+
 -}
 
 module Cat.Sized.Examples.Circuit
@@ -72,7 +94,7 @@ module Cat.Sized.Examples.Circuit
             , Iff
             )
   , FreeCircuit
-  , ToBool
+  , ToBool (toBool)
   , CircuitCarrier
 
     -- * Example: A simple logical predicate / powerset operation
@@ -184,7 +206,6 @@ import Prelude hiding
 import Control.Arrow qualified as CA
 import Control.Arrow
   ( first
-  , second
   , (>>>)
   , (<<<)
   )
@@ -208,7 +229,6 @@ import Data.Maybe
   ( fromMaybe
   , fromJust
   )
-import Data.List qualified as L
 import Data.Foldable qualified as FO
 
 
@@ -218,10 +238,7 @@ import Cat.Operators
   )
 
 import Cat.Sized.Functor
-  ( HFunctor (hfmap)
-  , Fix (In, out)
-  , NT
-  , NT'
+  ( Fix (In)
   , cata
   )
 
@@ -234,15 +251,12 @@ import Cat.Sized.Semigroupoid.Class
   ( (.)
   , Sized ( Sized )
   , unSized
-  , Object
-  , Object'
   )
 import Cat.Sized.Category.Class
   ( id
   )
 import Cat.Sized.Monoidal.Class
-  ( Proxy
-  , (***)
+  ( (***)
   , join
   , split
   , sing
@@ -251,14 +265,8 @@ import Cat.Sized.Monoidal.Class
   )
 import Cat.Sized.Semicartesian.Class
   ( del
-  , idx
-  , sel
-  -- , HasTerminal (terminal)
-  , head
   , tail
   , last
-  , init
-  , prefix
   , suffix
   )
 import Cat.Sized.Diagonal.Class
@@ -277,19 +285,18 @@ import Cat.Sized.Cartesian.Free.Data
          )
   , foldMap
   , HasObject (ObjectOf)
-  , HasProxy (ProxyOf)
+  , HasProxy
   , HasProj
   , HasDel
   , HasSelect
   , HasProj
-  , HasDup (DupObjectOf)
-  , HasSwap (SwapObjectOf)
-  , fixed'
-  , unfixed'
+  , HasDup 
+  , HasSwap
+  -- , fixed'
+  -- , unfixed'
   -- , CartF
   , Cart'
   , mkAlg
-  , foldMap', CartesianFunctor
   , CartF ( EmbF
           , IdF
           )
@@ -1410,7 +1417,7 @@ bit).
 >                      . join
 
 >>> tableLc4O = table2I lookaheadCarry4UnitO
-tableLc4o :: [((Int, Int), Int)]
+tableLc4O :: [((Int, Int), Int)]
 >>> testLc4 ((x,y),xy) = ((x + y) `mod` (2 ^ 4)) == xy
 testLc4 :: (Eq a, Num a) => ((a, a), a) -> Bool
 >>> all testLc4 tableLc4O
@@ -1946,8 +1953,7 @@ table2IL f =
 > Cart' k ≅ Cart k
 
 See 'HFunctor' in "Cat.Unsized.Functor"/the resources mentioned there for
-background and "Cat.Sized.Functor" for the relevant instance here; the main
-difference is the additional complexity of constraints. -}
+background and "Cat.Sized.Functor" for the relevant instance here. -}
 type FreeCircuit' = Cart' Circuit
 type FreeCircuitF = CartF Circuit
 
@@ -1964,19 +1970,8 @@ it :: VS.Vector 1 Bool
 See 'cata' in 'Cat.Sized.Functor' and 'mkAlg' in 'Cat.Sized.Cartesian.Free.Data'.
 -}
 evalFreeCircuit' ∷ ∀ n m a b.
-  ( -- ArithPrim a, ArithPrim b
-  -- , Object (FreeArithF (->)) a
-  -- , Object (FreeArithF (->)) b
-  -- , (∀ x. Object (Fix η) x ⇒ Object' (η (Fix η)) x)
-  -- , (∀ x. Object FreeArith' x ⇒ Object' (FreeArithF (->)) x) -- restore
-    -- (∀ i x. Object VS.Vector FreeCircuit' i x ⇒ Object' VS.Vector (Sized (->)) i x)
-  -- , (∀ x. ArithPrim x ⇒ Object' (CatF ArithFunc (->)) x)
-  -- HFunctor (CatF ArithFunc)
-  -- , CartesianFunctor (CartF Circuit) VS.Vector (Cart' Circuit) (Sized (->))
-  )
-  -- ⇒ (CatF ArithFunc (->) :~> (->))
-  ⇒ FreeCircuit' VS.Vector n m a b
-  → Sized (->) VS.Vector n m a b
+    FreeCircuit' VS.Vector n m a b
+  → Sized (->)   VS.Vector n m a b
 evalFreeCircuit' = cata $ mkAlg evalCircuitPrim
 
 

@@ -1,12 +1,24 @@
+{-# OPTIONS_HADDOCK show-extensions #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {- | The source for this module is a minimal example of using this package; the
-Haddocks are not meant to be a substitute for viewing the source. -}
+Haddocks are not meant to be a substitute for viewing the source.
+
+This module is meant as a minor step beyond the gentler introduction or
+sized-product-free baseline of the 'Cat.Unsized.Examples.Arith' module; see that
+module or the 'Razor' example in the README for additional context on what is
+here and why.
+
+Neither this nor the 'unsized' variation on Hutton's Razor document or explain
+everything one might want to know about why things are the way they are in the
+module: for example, the role of object constraints and how the 'HasObject'
+typeclass (or the 'ObjectOf' associated type synonym) link a primitive morphism
+to the object constraints for a free category type. For deeper exposition on
+details like this, see the introduction to Boolean circuits (combinational
+logic) in "Cat.Sized.Examples.Circuit" or the discussion in the README. -}
 
 module Cat.Sized.Examples.Arith where
 
--- import Prelude qualified as P
-import Prelude.Unicode ((∘))
 import Prelude hiding
   ( and
   , or
@@ -15,58 +27,29 @@ import Prelude hiding
   , id
   , foldMap
   )
+import Control.Arrow ((<<<))
 
--- import GHC.Generics (Generic)
--- import Data.Coerce (coerce)
 import Data.Kind
   ( Type
-  -- , Constraint
   )
 import GHC.TypeNats
   ( KnownNat
   , Nat
-  -- , SNat
-  -- , type (+)
-  -- , type (*)
   )
 
 
 import Data.Bool hiding (not)
--- import Data.Maybe (fromMaybe, fromJust)
--- import Data.Foldable qualified as FO
--- import Data.Functor  qualified as F
-
--- import Control.Functor.Constrained.Extras
---   ( Functor
---   , fmap
---   )
-
--- import Cat.Operators
---   ( type (-|)
---   , type (|->)
---   )
-
 
 import Cat.Sized.Semigroupoid.Class
-  ( -- Object
-  -- , Object'
-    -- Semigroupoid
-  -- , (.)
-    Sized ( Sized )
-  -- , unSized
+  ( Sized ( Sized )
   )
--- import Cat.Sized.Category.Class
 
 import Cat.Sized.Semigroupoid.Instances ()
 import Cat.Sized.Category.Instances ()
 
--- import Cat.Sized.Category.Free.Data qualified as Cat
 import Cat.Sized.Semigroupoid.Free.Data
    ( HasObject ( ObjectOf
                )
-   -- , ObjectOf'
-   -- , N (N)
-   -- , To (To)
    )
 import Cat.Sized.Category.Free.Data
   ( Cat ( Id
@@ -75,12 +58,35 @@ import Cat.Sized.Category.Free.Data
         )
   , foldMap
   )
+
 import Cat.Sized.Semigroupoid.Free.Instances ()
 import Cat.Sized.Category.Free.Instances ()
 
 import Data.Vector.Sized qualified as VS
 
 
+-- One of the first differences you'll note is explicit kind annotations — and
+-- further down — more constraints:
+--
+-- 1. A product functor has kind @Nat → κ → κ@ for some kind @κ@.
+-- 2. A monoidal category has kind @(Nat → κ → κ) → Nat → Nat → κ → κ → Type@.
+--
+-- Why not specialize @κ@ to just @Type@?
+--
+-- In an earlier prototype for what became this package, I modeled Boolean
+-- functions as a category with an anonymous /n/-ary product, with morphisms of
+-- kind @Nat → Nat → Type@. This example suggested the value of kind
+-- polymorphism for singletons. There may be other useful reasons for kind
+-- polymorphism, but I haven't enountered them yet, and more salient reasons why
+-- maintaining this polymorphism might be appealing turned to be irrelevant as
+-- long as (kind- polymorphic) type families can't be partially applied.
+--
+-- In the meantime, a leading explicit kind parameter is a frequently recurring
+-- (and annoying) extra layer of verbosity when trying to use type applications;
+-- at some point, if I don't identify and find compelling use cases for this
+-- particular kind polymorphism, I may remove it and specialize @κ@ to @Type@
+-- throughout the package. (This would also make "first-class type families"
+-- relevant to a much larger proportion of the scope of the package.)
 
 data ArithFunc (φ ∷ Nat → Type → Type) (n ∷ Nat) (m ∷ Nat) (a ∷ Type) (b ∷ Type) where
   Lit    ∷ (ArithPrim b) ⇒ b →     ArithFunc φ 0 1 ()   b
@@ -99,8 +105,7 @@ instance ArithPrim ()
 
 instance HasObject φ ArithFunc where
   type ObjectOf φ ArithFunc n a = ( ArithPrim a
-                                  , Applicative (φ n)
-                                  , KnownNat n
+                                  , KnownNat  n
                                   )
 
 
@@ -111,70 +116,47 @@ noOp ∷ (ObjectOf φ ArithFunc n a)
   ⇒ FreeArith φ n n a a
 noOp = Id
 
-one ∷ ( ObjectOf φ ArithFunc 0 ()
-      , ObjectOf φ ArithFunc 1 Int
-      )
-  ⇒ FreeArith φ 0 1 () Int
+one ∷  FreeArith φ 0 1 () Int
 one = Emb $ Lit 1
 
-two ∷ ( ObjectOf φ ArithFunc 0 ()
-      , ObjectOf φ ArithFunc 1 Int
-      )
-  ⇒ FreeArith φ 0 1 () Int
+two ∷ FreeArith φ 0 1 () Int
 two = Emb $ Lit 2
 
-sub1 ∷ ( ObjectOf φ ArithFunc 1 Int
-       )
-  ⇒ FreeArith φ 1 1 Int Int
+sub1 ∷ FreeArith φ 1 1 Int Int
 sub1 = Emb Dec
 
-alsoOne ∷ ( ObjectOf φ ArithFunc 0 ()
-          , ObjectOf φ ArithFunc 1 ()
-          )
-  ⇒ FreeArith φ 0 1 () Int
+alsoOne ∷ FreeArith φ 0 1 () Int
 alsoOne = sub1 `Of` two
 
-alsoOneIsOne ∷ ( ObjectOf φ ArithFunc 0 ()
-               , ObjectOf φ ArithFunc 1 ()
-               )
-  ⇒ FreeArith φ 0 1 () Bool
+alsoOneIsOne ∷ FreeArith φ 0 1 () Bool
 alsoOneIsOne = Emb (EqlTo 1) `Of` alsoOne
 
-boolToInt ∷ ( ObjectOf φ ArithFunc 1 Bool
-            , ObjectOf φ ArithFunc 1 Int
-            )
-  ⇒ FreeArith φ 1 1 Bool Int
+boolToInt ∷ FreeArith φ 1 1 Bool Int
 boolToInt = Emb (Ite 0 1)
 
-alsoOneIsOne' ∷ ( ObjectOf φ ArithFunc 0 ()
-                , ObjectOf φ ArithFunc 1 Int
-                )
-  ⇒ FreeArith φ 0 1 () Int
+alsoOneIsOne' ∷ FreeArith φ 0 1 () Int
 alsoOneIsOne' = boolToInt `Of` alsoOneIsOne `Of` noOp
 
 
 
-instance HasObject VS.Vector (Sized (->))
-
-evalArithPrimV ∷ ∀ (n ∷ Nat) (m ∷ Nat) a b.
-  ( ObjectOf VS.Vector ArithFunc n a
-  , ObjectOf VS.Vector ArithFunc m b
-  -- , Object   VS.Vector (Sized (->)) n a
-  -- , Object   VS.Vector (Sized (->)) m b
-  -- , (∀ i x. ObjectOf VS.Vector ArithFunc i x ⇒ Object' VS.Vector (Sized (->)) i x)
+evalArithPrimV ∷ ∀ φ (n ∷ Nat) (m ∷ Nat) a b.
+  ( ObjectOf φ ArithFunc n a
+  , ObjectOf φ ArithFunc m b
   )
-  ⇒ ArithFunc  VS.Vector n m a b
+  ⇒ ArithFunc    φ         n m a b
   → (Sized (->)) VS.Vector n m a b
-evalArithPrimV (Lit @b_ @VS.Vector  b) =
-  Sized $ const @(VS.Vector 1 b_) @(VS.Vector 0 ())   (pure b)
-evalArithPrimV  Inc            = Sized   (+        1)
-evalArithPrimV  Dec            = Sized   (subtract 1)
-evalArithPrimV (Add   @a_ a  ) = Sized $ pure ∘ (+      a) ∘ VS.head
-evalArithPrimV (EqlTo @a_ a  ) = Sized $ pure ∘ (==     a) ∘ VS.head
-evalArithPrimV (Ite   @b_ f t) = Sized $ pure ∘  bool f t  ∘ VS.head
+evalArithPrimV (Lit     b) = Sized $ const    (pure b)
+evalArithPrimV  Inc        = Sized   (+        1)
+evalArithPrimV  Dec        = Sized   (subtract 1)
+evalArithPrimV (Add     a) = Sized $ pure <<< (+      a) <<< VS.head
+evalArithPrimV (EqlTo   a) = Sized $ pure <<< (==     a) <<< VS.head
+evalArithPrimV (Ite   f t) = Sized $ pure <<<  bool f t  <<< VS.head
+
 
 {- |
 
+>>> import Cat.Sized.Semigroupoid.Class (unSized)
+>>> import Data.Maybe (fromJust)
 >>> :t (unSized $ evalArith (Emb $ Lit (3 ∷ Int)))
 (unSized $ evalArith (Emb $ Lit (3 ∷ Int)))
   :: VS.Vector 0 () -> VS.Vector 1 Int
@@ -184,12 +166,14 @@ it :: VS.Vector 1 Int
 >>> (unSized $ evalArith $ alsoOneIsOne') $ (fromJust $ VS.fromList @0 [()])
 Vector [1]
 it :: VS.Vector 1 Int
+>>> (unSized $ evalArith two) $ pure ()
+Vector [2]
+it :: VS.Vector 1 Int
 -}
 evalArith ∷ ∀ n m a b.
           ( ObjectOf VS.Vector ArithFunc n a
           , ObjectOf VS.Vector ArithFunc m b
-          -- , ∀ i o. ObjectOf VS.Vector ArithFunc i o ⇒ Object' VS.Vector (Sized (->)) i o
           )
-          ⇒ FreeArith  VS.Vector  n m a b
+          ⇒ FreeArith    VS.Vector n m a b
           → (Sized (->)) VS.Vector n m a b
 evalArith = foldMap evalArithPrimV

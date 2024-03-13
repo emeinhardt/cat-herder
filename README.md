@@ -43,14 +43,37 @@ products tagged with a type-level `Nat` indicating the size of the product.
 The package also offers typeclasses that support freely lifting a set of
 primitive morphisms into various types of category in the hierarchy.
 
-This package is principally inspired by 
-[Conal Elliott's papers](http://conal.net/) and 
+This package is principally inspired by
+[Conal Elliott's papers](http://conal.net/) and
 [blog posts](http://conal.net/blog/posts/circuits-as-a-bicartesian-closed-category),
 [Megacz's earlier work on generalized arrows](http://www.megacz.com/berkeley/research),
 and the 
 [`constrained-categories`](https://hackage.haskell.org/package/constrained-categories)
 package. These are also excellent places to look for additional context or
 background.
+
+
+## Intended audience
+
+This README assumes you have more than a beginner's level of understanding
+typed functional programming (Haskell in particular), and that 
+
+ - You've had multiple exposures to at least a few ways of doing things like
+     - Defining a language of expressions that models some domain.
+     - Parsing or pretty-printing terms of such a language.
+     - Evaluating terms of such a language.
+ - You understand why problems like these and their solutions productively
+   generalize to (surprisingly) many other tasks in software development,
+   starting with easy-to-find resources on topics like folds, functors, monads,
+   and the many things you can do with these abstractions.
+
+The README also assumes some basic prior introduction to the relation between
+typed functional programming and category theory. If you are unsure if you meet
+this description but have a comfortable working knowledge of what a functor and
+a monad are in the context of typed functional programming, Conal Elliott's
+papers or Walters (1992) — see the [resources](#related-resources) list — might
+be good places to look.
+
 
 
 ## Why
@@ -73,7 +96,7 @@ motivate this package.
     either limit the user to `(,)` ± `Either` or to a variation on cons-lists
     for representing (co)products. If you can live without heterogeneously-typed
     products, then using trees of `(,)`/`Either` of any size to simulate a
-    collection can quickly become unwieldily; on the other hand, you may not
+    collection can quickly become unwieldy; on the other hand, you may not
     want to be limited to linked-lists to model monoidal products.
  4. **Type-level sizes make more functions total and better model many
     domains.** The classic example of dependent types is a sized collection type
@@ -87,11 +110,11 @@ motivate this package.
     libraries make a pragmatic trade-off and bundle logically independent
     capabilities into a smaller typeclass hierarchy. On the other hand, if you
     want to model any domain where resource accounting is desirable or critical,
-    then you *want* a finer-grained hierarchy where copying, destruction, and
-    permutations can be more carefully tracked.
+    then you *want* a finer-grained ("substructural") hierarchy where copying, 
+    destruction, and permutations can be more carefully tracked.
     
-Those are the 5 reasons that motivate this package. However, the package is also
-motivated as an experiment.
+Those are the 5 main reasons that motivated creating this package instead of
+using something else. However, the package is also an experiment.
 
   - Flexibility, type-safety, and moving domain modeling into types come at a
     price: *sized containers* and *constrained typeclasses* add a lot of
@@ -100,19 +123,21 @@ motivated as an experiment.
     a setting without either of those two features.
 
   - Similarly, a finer-grained typeclass hierarchy not specialized to `(->)`
-    means more typeclasses, more possible derivations (and fewer obvious
-    defaults available), more verbose types, and more difficult type inference.
+    means more typeclasses, more possible typeclass instance derivations (and 
+    fewer obvious defaults available), more verbose types, and more difficult 
+    type inference.
 
 Some of these costs are borne principally in development of the library and not
 necessarily by downstream use: for example, nearly every constrained typeclass
-has a default trivial constraint, and between that and e.g. choosing a specific
-concrete type at any site of use, GHC has little or no trouble reasoning about
-verbose and intimidating-looking piles of constraints. 
+has a default trivial constraint, and between that and e.g. choosing specific
+concrete types at sites of use, GHC often has little or no trouble reasoning 
+that a hefty and intimidating-looking piles of constraints are satisfied. 
 
 In any case, as an experiment, the primary goal of the package currently is to
-flesh out basic functionality for productive EDSL development to assess the
-cost/benefit ratio of design decisions: this may motivate a significant rewrite,
-giving up constraints, or focusing more effort on unsized containers.
+flesh out basic functionality for productive EDSL development and assess the
+cost/benefit ratio of design decisions on how easy that that basic functionality
+is to achieve and then use: this may motivate a significant rewrite, giving up 
+constraints, or focusing more effort on unsized containers.
 
 
 
@@ -124,9 +149,9 @@ giving up constraints, or focusing more effort on unsized containers.
   then reliably applied across...fields."
   
   2. **Domain modeling:** Modeling your EDSL in terms of categories can offer
-  clearer domain modeling for some applications: 
+  clearer domain modeling for some contexts: 
   
-      - You have a very precise notion of what your domain is, someone has
+      - You may have a very precise notion of what your domain is, someone has
         written how to model it categorically, and that's the domain encoding
         you want your DSL to reflect.
 
@@ -143,13 +168,14 @@ giving up constraints, or focusing more effort on unsized containers.
         offers control over this that e.g. `Control.Arrow` and `Data.Profunctor`
         do not. (See the resources by Megacz for more on this.)
       
-  3. **Reasoning about code:** More generally, modeling your domain
-  categorically may make it easier to reason equationally about the relationship
-  between the meaning of a program and what the encoding of that program can or
-  must be. Check out the Elliott papers in the **Resources** section for more on
-  this; if you'd prefer to see some of similar ideas without category theory,
-  check out [Elliott (2009)](http://conal.net/papers/type-class-morphisms)
-  instead. Finally, if papers are not your speed and you find recursion schemes
+  3. **Reasoning about code:** More generally, modeling terms of your domain
+  as arrows in a category may make it easier to reason equationally about the 
+  relationship between the meaning of a program and what the encoding of that 
+  program can or must be. Check out the Elliott papers in the **Resources** 
+  section for more on this; if you'd prefer to see some of similar ideas without 
+  category theory, check out 
+  [Elliott (2009)](http://conal.net/papers/type-class-morphisms) instead. 
+  Finally, if papers are not your speed and you find recursion schemes
   a friendlier domain to read about, if you read enough blog posts about
   recursion schemes you will encounter related ideas ("program calculation") in
   explanations of why particular recursion schemes have the form they do.
@@ -171,17 +197,18 @@ Riffing on #4 above, one way of thinking about the change in perspective is
 moving from modeling a program fragment as
 
  - An expression tree of values.
- - A container of terms — a functor in the "blue-collar functional programmer"
-   sense of `Data.Functor`.
+ - A container of terms — specifically a functor in the "blue-collar functional 
+   programmer" sense of `Data.Functor`.
  
 to modeling a program fragment as
 
  - A path in a directed hypergraph where vertices are types (not values) and
-   edges are function-like terms.
+   edges are function-like terms — bifunctors contravariant in one argument
+   and covariant in the other.
    
-     - In a Cartesian closed category like `(->)`, currying lets us think of
-       programs as paths in a directed graph (no proper hyperedges); giving this
-       up (or not making it the default assumption) means some of the tree-like
+     - In a cartesian closed category like `(->)`, currying lets us think of
+       programs as paths in a directed graph (no proper hyperedges); when
+       currying and `(,)` are opt-in features, then some of the tree-like
        structure of programs comes back into focus.
  
 Another way of putting this is that this package most closely models
@@ -197,7 +224,7 @@ broadcasting combinators (e.g. as provided by
 [orthotope](https://hackage.haskell.org/package/orthotope)) are a natural medium
 for describing many domain computations and a substitute for combinators a
 functional programmer without array language exposure might otherwise reach for
-— and which may not even be available in a category that isn't Cartesian closed.
+— and which may not even be available in a category that isn't cartesian closed.
 
 
 ## Haddock readability
@@ -228,7 +255,7 @@ The expected steps for defining an EDSL using this package are:
    morphisms that express features of your domain that aren't captured by the
    plumbing of some combination of categorical typeclasses.
 3. **Typeclass instances and associated type families:** Define some typeclass +
-   associated type synonyms that define categorical "parameters", to taste.
+   associated type synonyms that define category "parameters", to taste.
    
    - This could include relatively simple things like defining the initial or
      terminal object (if any), indicating a canonical product functor, or
@@ -241,7 +268,7 @@ The expected steps for defining an EDSL using this package are:
 Terms of your DSL will then be paths in a free category type over your
 primitives. At this point you may define pattern synonyms, smart constructors,
 and additional typeclass instances related to your domain and limiting the
-construction of well-formed terms and/or providing a more ergonomic interface.
+construction of well-formed terms or providing a more ergonomic interface.
 
 Evaluators, pretty printers, etc. will generally be defined by a fold over the
 free structure, or more generally via a functor or natural transformation.
@@ -253,9 +280,9 @@ See the resources section for more about this general process.
 
 Here we'll look at the simplest example of the workflow outlined above for a
 variation on [Hutton's razor](https://www.cs.nott.ac.uk/~pszgmh/semantics.pdf):
-a simple EDSL capturing a many-sorted domain with branching control flow — i.e.
-with integer and boolean constants, some arithmetic operations, equality, and
-if-then-else.
+a simple language capturing a many-sorted domain with branching control flow — 
+i.e. with integer and boolean constants, some arithmetic operations, equality, 
+and if-then-else.
 
   1. We define a set of primitive morphisms (`Razor`).
   2. We define typeclass instances (`HasObject`) that pick out which Haskell
@@ -280,10 +307,11 @@ if-then-else.
            -> Cat k a c
       ```
      
-  4. We define an evaluator by handing `Cat.foldMap` a function (`evalRazor`)
-     that maps primitive morphisms to morphisms in the category for evaluation
-     (`(->)`); there is also a brief discussion of recursion schemes over
-     categories with [higher-order functors](https://arxiv.org/pdf/2202.13633.pdf#page=33).
+  4. We define an evaluator by handing the `foldMap` function for the free 
+  category type (`Cat`) a function (`evalRazor`) that maps primitive morphisms to 
+  morphisms in the category for evaluation (`(->)`); there is also a brief 
+  discussion of recursion schemes over categories with 
+  [higher-order functors](https://arxiv.org/pdf/2202.13633.pdf#page=33).
      
 
 ``` haskell
@@ -293,8 +321,14 @@ module Hutton where
 import Prelude hiding (foldMap)
 import Data.Bool (bool)
 
+import Cat.Unsized.Functor
+  ( Fix ( In
+        )
+  , cata
+  )
+
 import Cat.Unsized.Category.Class 
-  ( Category (Object)
+  ( Object
   , Object'
   )
 import Cat.Unsized.Category.Free.Data
@@ -304,6 +338,12 @@ import Cat.Unsized.Category.Free.Data
         )
   , HasObject (ObjectOf)
   , foldMap
+  , CatF ( EmbF
+         , IdF
+         , OfF
+         )
+  , Cat'
+  , mkAlg
   )
 import Cat.Unsized.Category.Instances ()
 import Cat.Unsized.Category.Free.Instances ()
@@ -345,33 +385,27 @@ noOp :: (ObjectOf Razor a)
 noOp = Id
 
 -- | ≈ @const (1 :: Int)@
-one :: (ObjectOf Razor (), ObjectOf Razor Int)
-  => RazorTerm () Int
+one :: RazorTerm () Int
 one = Emb $ Lit 1
 
 -- | ≈ @const (2 :: Int)@
-two :: (ObjectOf Razor (), ObjectOf Razor Int)
-  => RazorTerm () Int
+two :: RazorTerm () Int
 two = Emb $ Lit 2
 
 -- | ≈ @subtract (1 :: Int)@
-sub1 :: (ObjectOf Razor Int)
-  => RazorTerm Int Int
+sub1 :: RazorTerm Int Int
 sub1 = Emb Dec
 
 -- | ≈ @const (2 - (1 :: Int))@
-alsoOne :: (ObjectOf Razor ())
-  => RazorTerm () Int
+alsoOne :: RazorTerm () Int
 alsoOne = sub1 `Of` two
 
 -- | ≈ @(== 1) . (const (2 - (1 :: Int)))@
-oneIsOne :: (ObjectOf Razor ())
-  => RazorTerm () Bool
+oneIsOne :: RazorTerm () Bool
 oneIsOne = Emb (EqlTo 1) `Of` alsoOne
 
 -- | ≈ @bool (0 :: Int) (1 :: Int)@
-boolToInt :: (ObjectOf Razor Bool, ObjectOf Razor Int)
-  => RazorTerm Bool Int
+boolToInt :: RazorTerm Bool Int
 boolToInt = Emb (Ite 0 1)
 
 {- |
@@ -381,19 +415,18 @@ boolToInt = Emb (Ite 0 1)
 . id
 @
 -}
-alsoOneIsOne :: (ObjectOf Razor (), ObjectOf Razor Int)
-  => RazorTerm () Int
+alsoOneIsOne :: RazorTerm () Int
 alsoOneIsOne = boolToInt `Of` oneIsOne `Of` noOp
 
 
 -- | This algebra maps primitive morphisms into a target category - @(->)@.
 evalRazor :: forall a b. Razor a b -> (a -> b)
-evalRazor (Lit   @b_ b  ) = const    b
-evalRazor  Inc            = (+       1)
-evalRazor  Dec            = subtract 1
-evalRazor (Add       a  ) = (+       a)
-evalRazor (EqlTo @a_ a  ) = (==      a)
-evalRazor (Ite   @b_ f t) = bool f t
+evalRazor (Lit     b) = const    b
+evalRazor  Inc        = (+       1)
+evalRazor  Dec        = subtract 1
+evalRazor (Add     a) = (+       a)
+evalRazor (EqlTo   a) = (==      a)
+evalRazor (Ite   f t) = bool   f t
 
 
 {- |
@@ -448,7 +481,7 @@ cata alg = alg <<< hfmap (cata alg) <<< out
 -- ...
 
 -- See 'Cat.Unsized.Functor' / 'Cat.Sized.Functor' and 'Cat._.Category.Free.Data'
--- for more on what this looks like.
+-- for more on what this looks like — especially what pattern functors are like.
 ```
 
 Continuing the `Razor` example:
@@ -467,28 +500,23 @@ noOp' :: (ObjectOf Razor a)
 noOp' = In IdF
 
 -- | ≈ @const (2 :: Int)@
-two' :: (ObjectOf Razor (), ObjectOf Razor Int)
-  => RazorTerm' () Int
+two' :: RazorTerm' () Int
 two' = In $ EmbF $ Lit 2
 
 -- | ≈ @subtract (1 :: Int)@
-sub1' :: (ObjectOf Razor Int)
-  => RazorTerm' Int Int
+sub1' :: RazorTerm' Int Int
 sub1' = In $ EmbF Dec
 
 -- | ≈ @const (2 - (1 :: Int))@
-alsoOne' :: (ObjectOf Razor ())
-  => RazorTerm' () Int
+alsoOne' :: RazorTerm' () Int
 alsoOne' = In $ sub1' `OfF` two'
 
 -- | ≈ @(== 1) <<< (const (2 - (1 :: Int)))@
-oneIsOne' :: (ObjectOf Razor ())
-  => RazorTerm' () Bool
+oneIsOne' :: RazorTerm' () Bool
 oneIsOne' = In $ In (EmbF (EqlTo 1)) `OfF` alsoOne'
 
 -- | ≈ @bool (0 :: Int) (1 :: Int)@
-boolToInt' :: (ObjectOf Razor Bool, ObjectOf Razor Int)
-  => RazorTerm' Bool Int
+boolToInt' :: RazorTerm' Bool Int
 boolToInt' = In $ EmbF (Ite 0 1)
 
 {- |
@@ -498,8 +526,7 @@ boolToInt' = In $ EmbF (Ite 0 1)
 <<< id
 @
 -}
-alsoOneIsOne' :: (ObjectOf Razor (), ObjectOf Razor Int)
-  => RazorTerm' () Int
+alsoOneIsOne' :: RazorTerm' () Int
 alsoOneIsOne' = In $ boolToInt' `OfF` In (oneIsOne' `OfF` noOp')
 
 
@@ -525,24 +552,29 @@ evalRazorTerm' = cata $ mkAlg evalRazor
 ### Boolean circuits
 
 This more complex example uses more of the features offered by the package,
-including morphisms with `Nat`-tagged monoidal products and Cartesian
+including morphisms with `Nat`-tagged monoidal products and cartesian
 combinators. It is more detailed than the arithmetic example, but is an
 abbreviated presentation of the contents of `Cat.Sized.Examples.Circuit`; see
-that module for more information.
+that module for more exposition and context.
 
 #### Familiar combinators, mixfix hacks, and the basic morphism type <a name="notation"></a>
 
-This is a more complex example, so it's worth clarifying up front what identifiers
-mean what. As a first introduction to the package, the combinator conventions in
-this example are as follows:
+This is a more complex example, so it's worth clarifying up front what 
+familiar-looking combinators mean here — some have been redefined in this 
+package or given multiple sets of synonyms to avoid railroading users into a 
+particular namespace management strategy.
 
- - Homophonous synonyms for Prelude combinators are used in expressions in the
-   object language (EDSL). If you understand those combinators when they're used
-   elsewhere, they behave the way you'd expect here. For example,
+As a first introduction to the package, the combinator conventions in this 
+example are as follows:
+
+ - Homophonous ("homographic") synonyms for Prelude combinators are used in 
+   expressions in the object language (EDSL). If you understand those 
+   combinators when they're used elsewhere, they behave the way you'd expect 
+   here. For example,
 
       - `(.)` refers to `Cat.Sized.Semigroupoid.Class` composition.
       - `id` refers to the identity morphism from `Cat.Sized.Category.Class`.
-      - `(***)` refers to monoidal tensor product from
+      - `(***)` refers to the monoidal tensor product from
         `Cat.Sized.Monoidal.Class`.
       - `(&&&)` refers to the "fork" operation from `Cat.Sized.Diagonal.Class` —
         except in one or two cases where it is explicitly qualified to indicate
@@ -551,9 +583,10 @@ this example are as follows:
  - `Control.Arrow` operators — `(>>>)`, `(<<<)` — are used for composition in
    the metalanguage — `(->)`.
 
- - `IcelandJack`'s mixfix operator hack (see `Cat.Operators`) is used to make
-   large morphisms a bit more readable, especially in source code (less so in 
-   Haddock-generated docs):
+ - `IcelandJack`'s 
+ [mixfix operator hack](https://www.reddit.com/r/haskell/comments/xdcx08/comment/iog81nv)
+ is used to make large morphisms a bit more readable, especially in source code (less so in 
+ Haddock-generated docs):
 
 ``` haskell
 -- A morphism in the category k from a to b:
@@ -580,14 +613,17 @@ Above you see a typical morphism type in this package:
    the morphism. 
  - In general though, morphisms don't have to be to and from the same 
    types — a type like `Bool` doesn't have to show up on both sides, and we can
-   have arbitrarily nested products of products.
+   have arbitrarily nested products of products. The `Razor` example has a 
+   `Sized` variant (`Cat.Sized.Examples.Arith`) that demonstrates differing 
+   source and target carrier objects, and the Boolean circuit example below 
+   illustrates nested products.
 
 
 
 #### Categorical encoding
 
 The set of Boolean functions can be defined in terms of the freely generated
-strict symmetric monoidal/Cartesian category over a set of generator morphisms
+strict symmetric monoidal/cartesian category over a set of generator morphisms
 ("logic gates") that are complete with respect to Boolean functions.
 
  - The objects of the category are (indexed by) the natural numbers: the object
@@ -644,7 +680,7 @@ instance HasObject φ Circuit where
 
 
 {- | The terms of our EDSL for Boolean functions will be paths in the freely
-generated (/n/-ary product) Cartesian category over the 'Circuit' primitives. -}
+generated (/n/-ary product) cartesian category over the 'Circuit' primitives. -}
 type FreeCircuit = Cart Circuit  -- See 'Cat.Sized.Cartesian.Free.Data' for 'Cart'.
 ```
 
@@ -658,11 +694,11 @@ type FreeCircuit = Cart Circuit  -- See 'Cat.Sized.Cartesian.Free.Data' for 'Car
 The 'Sized' newtype — see 'Cat.Sized.Semigroupoid' — lets us lift a type `k a b`
 with an "unsized" semigroupoid or category instance — like `(->)` — into a 
 "sized" one.
-}
+-}
 
-{- | A function mapping primitive 'Circuit' morphisms into the Cartesian category
+{- | A function mapping primitive 'Circuit' morphisms into the cartesian category
 @Sized (->)@ with a product functor given by the @vector-sized@ package's 
-'Vector' type from "Data.Vector.Sized" (qualified here as 'VS').}
+'Vector' type from "Data.Vector.Sized" (qualified here as 'VS'). -}
 evalCircuitPrim :: forall (n :: Nat) (m :: Nat) a b.
      a -| Circuit      VS.Vector n m |-> b
   -> a -| (Sized (->)) VS.Vector n m |-> b
@@ -687,7 +723,7 @@ evalCircuitPrim Xor  =
 
 
 {- | Folds a 'FreeCircuit' term to a term in another 
-(sized, n-ary, homogeneously-typed) Cartesian category with the same product
+(sized, n-ary, homogeneously-typed) cartesian category with the same product
 — @Sized (->) VS.Vector@.
 
 >>> (unSized (eval impliesBin)) $ (fromJust $ VS.fromList @2 [True, True])
@@ -722,7 +758,6 @@ eval' :: forall n m a b.
   => a -| FreeCircuit VS.Vector n m |-> b
   -> (VS.Vector n a -> VS.Vector m b)
 eval' = unSized <<< foldMap P.id evalCircuitPrim
-
 ```
 
 
@@ -732,7 +767,7 @@ eval' = unSized <<< foldMap P.id evalCircuitPrim
 ##### Simple example - implication <a name="implication"></a>
 
 Implication ("is a subset of") is not included in our set of primitive morphisms
-— below we define variations on it terms of other primitives and available
+— below we define variations on it in terms of other primitives and available
 combinators.
 
 ``` haskell
@@ -766,11 +801,21 @@ this means that `Applicative` combinators are not available, but very useful
 combinators like `zipWith` (generalized in some ways, specialized in others) can
 still be defined.
 
+Similarly, `join` is essentially a variant of the familiar monadic `join`
+specialized to the setting of interest ('sized, homogeneously-typed product'): 
+it flattens one layer of nesting.
+
+Throughout the examples below there will be other examples of combinators
+for monoidal categories in the setting of interest, often with names identical
+to familiar ones that serve the same or at least an analogous function to their
+`base` homophone/homograph (if they have one): `last`, `tail`, `zip`, `sing`, 
+`unsing`, and `bising`. Type signatures are given in each case.
+
 
 ##### Complex example — carry-lookahead adder  <a name="carry-lookahead"></a>
 
 This example is less trivial than implication, features compositional structure,
-and motivates using more of the available Cartesian combinators, and
+and motivates using more of the available cartesian combinators, and
 demonstrates some friction where familiar combinators (folds/scans) are not part
 of the categorical toolkit of the available DSL.
     
@@ -778,17 +823,23 @@ See e.g. [Adder (electronics)](https://w.wiki/9SJT) for extended background. The
 ;tldr for readers unfamiliar with Boolean circuits:
 
   - The naive way of adding two *n*-bit numbers — a ripple-carry adder — is
-    sequential.
+    sequential, starting from the two least significant ("rightmost" in familiar
+    place-value notation) bits of the input numbers and propagating a carry bit
+    at each step.
   - We can do better: a carry-lookahead adder lets more computation proceed in
     parallel compared to the naive adder, and accomplishes this with *composable
     building blocks*:
       - *Before* we get a carry-in bit, we can calculate whether a pair of bits
-        from the pair of numbers to add will propagate an incoming carry value
-        or generate one of its own. This summary can be combined with a carry-in
-        bit to calculate a carry-out bit.
-      - We can combine the carry-propagate and carry-generate calculations for
-        *blocks* of bits to generate *block*-level propagate and generate bits.
-      - We can repeat this process for *sequences* of blocks of bits...
+        from the pair of numbers to add (each at position *i*) will propagate an
+        incoming carry value or generate one of its own. This summary can be 
+        combined with a carry-in bit (whenever it becomes available) to calculate
+        a carry-out bit.
+      - Even without a carry-in bit, a bit of algebra lets us combine the carry-
+        propagate and carry-generate calculations for *blocks* of bits to 
+        generate *block*-level propagate and generate bits.
+      - We can repeat this process for *sequences* of blocks of bits: to wit, we 
+        can build components for pairs of bits, for blocks of 4 bits in terms of
+        those, and for 16 bits (4 blocks of 4 bits each) in terms of those.
 
 
 ``` haskell
@@ -809,7 +860,11 @@ lookahead = ( Emb Or
             . (id *** Emb (And @2))
             )
         &&& (del 1 *** Emb Xor)     -- Note the explicit use of a combinator for destroying information
-        
+
+-- 'del' ('Cat.Sized.Semicartesian.Class') takes an index to delete from an /n/-product and
+-- yields a morphism that deletes that particular index from an /n/-product.
+-- del :: Finite n -> a -| k φ n (n - 1) |-> a
+
 
  {- | Map a pair of /n/-bit (unsigned) numbers to /n/ pairs of
 /(generate, propagate)/ bits for a carry-lookahead adder.
@@ -830,6 +885,8 @@ Vector [Vector [False,True],Vector [False,True]]  -- generate+propagate for the 
 -}
 lookaheadCarryGPs :: forall φ n. φ n Bool -| FreeCircuit φ 2 n |-> φ 2 Bool
 lookaheadCarryGPs = zipWith fullAdderGP
+
+-- zipWith :: (a -| k φ n m |-> b) -> (φ l a -| k φ n l |-> φ m b) 
 
 
 {- | Map /4/ pairs of /(generate, propagate)/ bits from a pair of /4/-bit numbers
@@ -856,6 +913,11 @@ lookaheadCarryGGP4 =
     rev4 :: Bool -| FreeCircuit φ 4 4 |-> Bool
     rev4 = swap 1 2 . swap 0 3
 
+    -- 'swap' is a cartesian combinator for permuting a pair of indices, 
+    -- defined in 'Cat.Sized.Braided':
+    -- swap :: Finite n -> Finite n -> a -| k φ n n |-> a
+
+
     -- | Given 4 propagates
     --
     --   > [p₀, p₁, p₂, p₃]
@@ -876,9 +938,10 @@ lookaheadCarryGGP4 =
             )
             . suffix @Type @φ @FreeCircuit @3 @4)  
     
-    -- Note that 'suffix' is a Cartesian combinator for projections 
+    -- Note that 'suffix' is a cartesian combinator for projections 
     -- defined in "Cat.Sized.Semicartesian":
     -- suffix :: a -| k φ n l |-> a
+
 
     -- | Given carry-generates and carry-propagates
     --
@@ -893,6 +956,15 @@ lookaheadCarryGGP4 =
        . zipWith (Emb $ And @2)
        . (id *** (sing . psufs . rev4 . unsing))  -- ...and 'psufs' is essentially a scan
 
+    -- join    :: φ m a -| k φ n (n * m) |-> a 
+    -- zipWith :: (a -| k φ n m |-> b) -> (φ l a -| k φ n l |-> φ m b) 
+
+    -- 'sing' and its inverse 'unsing' introduce or eliminate a single trivial, 
+    -- net-size-preserving layer of nesting:
+    -- sing   ::     a -| k φ n 1 |-> φ n a
+    -- unsing :: φ n a -| k φ 1 n |->     a
+
+
     -- | Given carry-generates and carry-propagates
     --
     -- > [[g₃, g₂, g₁, g₀], [p₃, p₂, p₁, p₀]]
@@ -905,13 +977,19 @@ lookaheadCarryGGP4 =
        . join     -- Remove nesting on the propagates
        . last     -- Ignore the generate bits
        
+    -- join :: φ m a -| k φ n (n * m) |-> a 
+
     -- 'last' is a (safe) analogue of the Prelude's 'last': it selects the last 
-    -- element of a product
+    -- element of a product:
+    -- last :: a -| k φ n 1 |-> a
+
 
   in (   gg
      &&& gp
      )
    . zip  -- Rezip the (g,p) pairs into all of the generate bits and all the propagate bits.
+
+   -- zip :: φ m a -| k φ n m |-> φ n a
 
 
 {- | A composable 4-bit carry-lookahead adder unit that maps
@@ -941,6 +1019,11 @@ lookaheadCarry4Unit =
             )
         *** id1  -- Leave the carry-in bit alone
 
+      -- 'split' is the inverse of 'join':
+      -- split ::     a -| k φ (n * m) n      |-> φ m a
+      -- join  :: φ m a -| k φ  n     (n * m) |->     a 
+
+
       -- | Map the group-generate, group-propagate, and carry-in bit to a
       -- carry-out bit.
       co' :: Bool -| FreeCircuit φ 3 1 |-> Bool
@@ -955,7 +1038,10 @@ lookaheadCarry4Unit =
           . (  (lookaheadCarryGGP4 . split)
             *** id1
             )
+
+      -- split :: a -| k φ (n * m) n |-> φ m a
             
+
       -- | Compute 4 sum bits from generate-propagate pairs and the carry-in bit.
       sums :: Bool -| FreeCircuit φ 9 4 |-> Bool
       sums = del 0                       -- Throw-away the carry-out bit;
@@ -963,6 +1049,9 @@ lookaheadCarry4Unit =
            . (id *** lookahead *** id2)  -- faster way of computing this.
            . (id *** lookahead *** id1)
            . (id *** lookahead *** id0)
+
+      -- del :: Finite n -> a -| k φ n (n - 1) |-> a
+
 
   in
     (      co
@@ -975,7 +1064,7 @@ lookaheadCarry4Unit =
 bit).
 
 >>> tableLc4O = table2I lookaheadCarry4UnitO  -- See 'Cat.Sized.Examples.Circuit' for definition.
-tableLc4o :: [((Int, Int), Int)]
+tableLc4O :: [((Int, Int), Int)]
 >>> testLc4 ((x,y),xy) = ((x + y) `mod` (2 ^ 4)) == xy
 testLc4 :: (Eq a, Num a) => ((a, a), a) -> Bool
 >>> all testLc4 tableLc4O
@@ -1008,6 +1097,9 @@ lookaheadCarry4UnitO = tail
                      . (id *** Emb InF)
                      . join
                      
+-- tail ::     a -| k φ n  1      |-> a
+-- join :: φ m a -| k φ n (n * m) |-> a 
+
 
 {- | 16-bit adder composed of 'lookaheadCarry4Unit's.
 
@@ -1044,9 +1136,10 @@ lookaheadCarry16UnitO = let
   map4 f = let f' = bising f
            in  f' *** f' *** f' *** f'
            
-  -- bising :: (a -| k φ n m |-> b) -> (φ n a -| k φ 1 1 |-> φ m b)
   -- See 'Cat.Sized.Monoidal.Class'.
+  -- bising :: (a -| k φ n m |-> b) -> (φ n a -| k φ 1 1 |-> φ m b)
            
+
   -- | Each 4-bit carrylookahead adder unit expects 4 bits from one number, 4
   -- bits from the next, and a trailing carry-in bit.
   --
@@ -1062,6 +1155,11 @@ lookaheadCarry16UnitO = let
     . lookaheadCarry16Unit
     . (id *** Emb InF)
     . blockify
+
+-- tail  ::     a -| k φ  n      1      |->     a
+-- join  :: φ m a -| k φ  n     (n * m) |->     a
+-- split ::     a -| k φ (n * m) n      |-> φ m a
+-- zip   :: φ m a -| k φ  n      m      |-> φ n a
 ```
 
 
@@ -1070,16 +1168,13 @@ lookaheadCarry16UnitO = let
 ## Status
 
 __Examining the basic value proposition__. This package is a work-in-progress at
-an early stage. The API is not stable and the goal is prototyping something
+an early stage. The API is not stable and the main goal is prototyping something
 *sufficient* for key features of DSL development while supporting *constrained
-typeclasses* and *type-indexed monoidal products*.
-
-These two features in particular add a lot of complexity to typechecking and
-finding appropriate generalizations for familiar Haskell typeclasses.
-Accordingly, the main goal is figuring out the cost of desirable functionality
-or the right generalization for this package of familiar concepts — usually a
-category-theoretic typeclass defined with `->` in mind — that has multiple
-options outside of `->` or that has no obvious option at all.
+typeclasses* and *type-indexed monoidal products*. (There are also small 
+inconsistencies, TODOs, and features that are only mostly implemented because of
+the cost/benefit ratio of finishing or polishing.) These two features in 
+particular add a lot of complexity to typechecking and finding appropriate 
+generalizations for familiar Haskell typeclasses.
 
 Current supporting goals are similarly exploratory:
 
@@ -1111,7 +1206,7 @@ Current supporting goals are similarly exploratory:
    namely [ersatz](https://hackage.haskell.org/package/ersatz) and
    [souffle-haskell](https://hackage.haskell.org/package/souffle-haskell).
     - See: 
-       - Lafont 2003, [*Towards an algebraic theory of Boolean Circuits*](https://core.ac.uk/download/pdf/82687279.pdf).
+       - Lafont 2003, [*Towards an algebraic theory of Boolean circuits*](https://core.ac.uk/download/pdf/82687279.pdf).
        - Gu 2022, [*Categorical Modelling of Logic Programming: Coalgebra, Functorial Semantics, String Diagrams*](https://discovery.ucl.ac.uk/id/eprint/10168183/1/tao-thesis.pdf).
        - Ghica et al 2024, [*A Fully Compositional Theory of Sequential Digital Circuits: Denotational, Operational, and Algebraic Semantics*](https://arxiv.org/abs/2201.10456).
     - Ideally the interface to logic programming tools should be useful for
@@ -1174,8 +1269,9 @@ __Current status:__
 ### A granular typeclass hierarchy
 
 __Current status:__ The current hierarchy covers substructural refinements of
-Cartesian and Cocartesian categories; there is a limited "unsized" (non
-`Nat`-indexed) hierarchy mostly as a "bridge" from `->`/for `base` typeclasses.
+cartesian and cocartesian categories; there is a limited "unsized" (non
+`Nat`-indexed) hierarchy mostly serving as a "bridge" from `->`/for `base` 
+typeclass instances.
 
 As far as categories with one object go: currently, matrices over a semiring
 enter the typeclass hierarchy via an extra semigroupoid typeclass that is
@@ -1186,20 +1282,25 @@ typeclasses with reasonable ergonomics.
  1. Support for [modeling incremental computation via a generalized notion of a
     derivative](https://arxiv.org/abs/2002.05256).
  2. Support for traced categories.
- 3. Support for closed categories, including the interface for representable
-    applicative functors in closed categories described in 
-    [Elliott's paper on automatic differentiation](https://arxiv.org/pdf/1804.00746.pdf#page=21).
- 4. Better support for categories with one object / internal categories more
-    generally, mostly for the purpose of figuring out how to appropriately
+ 3. Support for closed categories, including 
+ 
+    - The interface for closed categories with representable
+      applicative product functors described in
+      [Elliott's paper on automatic differentiation](https://arxiv.org/pdf/1804.00746.pdf#page=21).
+    - An example module with an implementation of *some*thing comparable to a 
+      variation on lambda calculus (modulo the restrictions of this package's
+      focus on finitary, homogeneously-typed products).
+ 4. Better support for categories with one object / maybe internal categories 
+    more generally, mostly for the purpose of figuring out how to appropriately
     integrate many familiar and useful typeclasses capturing algebraic
     structures.
  5. Monad and comonad transformers.
  6. Categorical representations (typeclasses ± free types) of basic discrete
     math structures expected to be useful for DSL development, at least as
     examples.
-      - Ex: representations of partial functions, binary relations, finite
-      powersets, order theoretic structures, or regular languages/functions on
-      strings or forests.
+      - Ex: representations of partial functions, finite powersets, order 
+      theoretic structures, or regular languages/functions on strings or 
+      forests.
  7. Round out the "unsized" hierarchy after it's clearer what API is sufficient
     for type-level size-indexed types. 
  
@@ -1239,9 +1340,9 @@ The resources below center around one or both of:
  1. The use of category theory to represent, reason about, and manipulate
     programs generally in the context of typed FP or with special emphasis on
     contexts that reflect the setting of this package's focus (finite,
-    homogeneous products, etc.): traversable/representable functors, tensor
-    programming, concatenative/array languages, and finite-state models of
-    computation.
+    homogeneous products, etc.): finitary traversable/representable functors, 
+    tensor programming, concatenative/array languages, and finite-state models 
+    of computation.
  2. Relatively accessible resources about category theory related to
     multicategories, operads, or PROPs, especially ones relevant to the
     computational settings described above.

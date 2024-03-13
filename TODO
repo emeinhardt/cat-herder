@@ -16,7 +16,6 @@
 = Anytime dead code cleanup/maintenance
 
   - Cat.Orthotope
-  - Cat.Sized.Examples.Arith
 
   - Cat.Unsized.Category.Free.Data - cleanup @foldMap@, @fixed@
   - Cat.Sized.Semigroupoid.Free.Data - cleanup @foldMap@
