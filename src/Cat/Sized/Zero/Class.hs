@@ -19,8 +19,8 @@ import Data.Kind (Type)
 import GHC.TypeNats
   ( KnownNat
   , Nat
-  , SNat
-  , pattern SNat
+  -- , SNat
+  -- , pattern SNat
   )
 
 import Cat.Operators

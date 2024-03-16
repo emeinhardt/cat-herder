@@ -44,6 +44,7 @@ module Cat.Sized.Cocartesian.Class
                )
   , PermObject'
   , permRep
+  , permRep'
 
     -- * Re-exports from "Cat.Sized.Codiagonal"
   , Codiagonal ( JamObject

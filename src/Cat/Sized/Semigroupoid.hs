@@ -9,4 +9,4 @@ module Cat.Sized.Semigroupoid
  ) where
 
 import Cat.Sized.Semigroupoid.Class
-import Cat.Sized.Semigroupoid.Instances
+import Cat.Sized.Semigroupoid.Instances ()

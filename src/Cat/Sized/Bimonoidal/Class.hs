@@ -46,7 +46,7 @@ import Cat.Sized.Profunctor
   )
 
 import Cat.Sized.Monoidal.Class
-  ( Monoidal ( Unit
+  ( Monoidal ( -- Unit
              )
   )
 -- import Cat.Sized.Semicartesian.Class

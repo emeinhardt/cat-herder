@@ -26,17 +26,9 @@ import Prelude hiding
   )
 import Prelude.Unicode
   ((∘))
-import Data.Composition
-  ( (.:)
-  , (.:.)
-  )
-import Control.Arrow
-  ( (>>>)
-  , (<<<)
-  )
 
 import Data.Function
-  ((&), ($))
+  ((&))
 
 
 -- C/o u/Iceland_jack: https://www.reddit.com/r/haskell/comments/xdcx08/arbitrary_expression_in_infix_mode/

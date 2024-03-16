@@ -76,7 +76,7 @@ import Cat.Sized.Category.Class
   )
 import Cat.Sized.Monoidal.Class
   ( Monoidal ( Proxy
-             , Unit
+             -- , Unit
              , (***)
              , mul
              , ith

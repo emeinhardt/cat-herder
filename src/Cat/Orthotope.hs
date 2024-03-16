@@ -278,8 +278,8 @@ import Data.Array.Shaped
   , Shape
   , Rank
   , rerank
-  , unravel
-  , ravel
+  -- , unravel
+  -- , ravel
   , generate
   )
 import Data.Array.Internal.Shape (Take, Drop, type (++))
@@ -649,39 +649,27 @@ joinR1 = R1
        ∘ unR1
 
 
-
 {- | This newtype lets rank 2 @orthotope@ arrays ("Data.Array.Shaped") with @n@
 columns and @m@ rows ("matrices") be treated as morphisms
 
 - from rank 1 arrays of size @n@ ("column vectors")
 
-- to rank 1 arrays of size @m@ ("row vectors").
+- to rank 1 arrays of size @m@ ("row vectors")
+
+...as long as the carrier type has a semiring instance.
 
 Note that
 
- - The order of size parameters on @M@ follows the convention of (all else
+ - The order of size parameters on @Sr2@ follows the convention of (all else
 being equal) input parameters preceding output parameters.
  - The order of dimension sizes on the wrapped "Array" type is flipped.
 
 Why? Because it makes matrix multiplication /G⋅F/ align with function
-composition /g ∘ f/. -}
-newtype M2 (φ ∷ Nat → κ → κ) (n ∷ Nat) (m ∷ Nat) (a ∷ Type) (b ∷ Type)
-  = M2 { unM2 ∷ Array '[m,n] b }
-  deriving newtype (Eq, Ord, Read, Show, F.Functor, Foldable, Applicative)
-  deriving stock (Generic, Traversable)
+composition /g ∘ f/.
 
-
-{- | A rank 2 'Array' of shape @[m,n]@ carrying @a@ values is isomorphic to a
-morphism from @R1 n a@ to @R1 m a@. -}
-m2 ∷ ∀ n m a. Array '[m,n] a → M2 R1 n m a a
-m2 = M2
-
-
-{- | Variant on 'M2' specifically intended to model matrices over a semiring.
-
-The inability of this type to represent nested products means it cannot have a
-@Monoidal@ instance as long that typeclass requires definitions of methods
-for working with nested products. -}
+Finally, note that the inability of this type to represent nested products means
+it cannot have a @Monoidal@ instance as long that typeclass requires definitions
+of methods for working with nested products. -}
 newtype Sr2 (φ ∷ Nat → κ → κ) (n ∷ Nat) (m ∷ Nat) (a ∷ Type) (b ∷ Type)
   = Sr2 { unSr2 ∷ Array '[m,n] b }
   deriving newtype (Eq, Ord, Read, Show, F.Functor, Foldable, Applicative)

@@ -90,8 +90,8 @@ import Data.Kind (Type)
 import GHC.TypeNats
   ( KnownNat
   , Nat
-  , SNat
-  , pattern SNat
+  -- , SNat
+  -- , pattern SNat
   -- , type (+)
   -- , type (-)
   -- , type (<=)
@@ -125,12 +125,12 @@ import Cat.Unsized.Category.Class   qualified as U
 import Cat.Unsized.Functor          qualified as U
 
 import Cat.Sized.Functor            qualified as S
-import Cat.Sized.Monad              qualified as S
-import Cat.Sized.Monad
-  ( Monad ( return
-          , bind
-          )
-  )
+-- import Cat.Sized.Monad              qualified as S
+-- import Cat.Sized.Monad
+--   ( Monad ( return
+--           , bind
+--           )
+--   )
 import Cat.VectorSized
   ( parV
   , ithV
@@ -142,18 +142,18 @@ import Cat.VectorSized
   )
 import Cat.Orthotope
   ( R1 ( R1, unR1 )
-  , diagA
+  -- , diagA
   , diagR1
 
   , parA
-  , unParA
-  , takeA
-  , dropA
-  , ithA
+  -- , unParA
+  -- , takeA
+  -- , dropA
+  -- , ithA
   , ithA'
-  , splitA
+  -- , splitA
   , splitR1
-  , joinA
+  -- , joinA
   , joinR1
 
   -- , Sr2 (Sr2, unSr2)
@@ -169,7 +169,7 @@ import Cat.Orthotope
   -- , padSr2
   )
 
-import Cat.Sized.Semigroupoid.Internal qualified as I
+-- import Cat.Sized.Semigroupoid.Internal qualified as I
 import Cat.Sized.Semigroupoid.Internal
   ( ISemigroupoid (IObject)
   , IObject'
@@ -184,8 +184,8 @@ import Cat.Sized.Semigroupoid.Class
     (⊙)
   )
 import Cat.Sized.Category.Class
-  ( Category
-  , id
+  ( -- Category
+    id
   )
 import Cat.Sized.Category.Instances ()
 import Cat.Sized.Category.Class
@@ -194,8 +194,8 @@ import Cat.Sized.Category.Class
   )
 
 import Cat.Sized.Monoidal.Class
-  ( Monoidal ( Proxy
-             , (***)
+  ( Monoidal ( -- Proxy
+               (***)
              , ith
              , assoc
              , split
@@ -203,14 +203,14 @@ import Cat.Sized.Monoidal.Class
              , unsing
              , sing
              , lift1
-             , bising
+             -- , bising
              , bisplit
              , bijoin
              -- , biassoc
              )
   , Solo   (Solo, unSolo)
   , Factor
-  , omap
+  -- , omap
   -- , gmap
   )
 

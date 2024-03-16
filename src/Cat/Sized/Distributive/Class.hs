@@ -16,8 +16,8 @@ module Cat.Sized.Distributive.Class
 
 import Data.Kind (Type)
 import GHC.TypeNats
-  ( KnownNat
-  , Nat
+  ( -- KnownNat
+    Nat
   )
 import Data.Finite (Finite)
 
@@ -29,7 +29,7 @@ import Cat.Operators
 import Cat.Sized.Profunctor
   ( Profunctor
   )
-import Cat.Sized.Semigroupoid.Class (Object)
+-- import Cat.Sized.Semigroupoid.Class (Object)
 import Cat.Sized.Monoidal.Class (Monoidal)
 import Cat.Sized.Braided.Class (Braided)
 

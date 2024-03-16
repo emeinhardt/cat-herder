@@ -62,8 +62,6 @@ import Cat.Sized.Monoidal.Class
              )
   , (|.|), split
   )
-import Cat.Sized.Semigroupoid (Object')
-import qualified Data.List as L
 
 
 

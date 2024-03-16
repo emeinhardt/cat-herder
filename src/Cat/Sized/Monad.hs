@@ -23,7 +23,6 @@ import Prelude hiding
   , Monad
   , return
   )
-import Prelude.Unicode ((∘))
 
 import GHC.Generics (Generic)
 import GHC.TypeNats (KnownNat, Nat)
@@ -43,7 +42,6 @@ import Cat.Sized.Semigroupoid.Class
   , (⊙)
   , Object'
   , Sized (Sized)
-  , unSized
   , Sub   (Sub)
   )
 import Cat.Sized.Category.Class

@@ -6,7 +6,7 @@
 -- |
 
 module Cat.Sized.Functor
-  ( Functor ( fmap )
+  ( Functor  ( fmap )
   , NatTrans ( hoist
              , comp
              )

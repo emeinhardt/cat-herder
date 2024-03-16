@@ -31,6 +31,8 @@ module Cat.Sized.Cartesian.Class
   , (⊕)
   , Solo   (Solo  , unSolo)
   , Factor (Factor, unFactor)
+  , omap
+  , gmap
 
     -- * Re-exports from "Cat.Sized.Braided"
   , Braided ( SwapObject
@@ -183,6 +185,7 @@ import Cat.Sized.Monoidal.Class
   , Solo   (Solo  , unSolo)
   , Factor (Factor, unFactor)
   , omap
+  , gmap
   )
 import Cat.Sized.Braided.Class
   ( Braided ( SwapObject

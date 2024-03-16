@@ -102,7 +102,7 @@ import Prelude hiding
   , zip
   , zipWith
   )
-import Prelude.Unicode ((∘))
+-- import Prelude.Unicode ((∘))
 
 import Data.Kind
   ( Type

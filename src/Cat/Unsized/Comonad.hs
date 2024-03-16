@@ -33,7 +33,6 @@ import Cat.Unsized.Semigroupoid.Class
   ( Semigroupoid (Object)
   , (.)
   , (⊙)
-  , Object'
   )
 import Cat.Unsized.Category.Class
   ( Category

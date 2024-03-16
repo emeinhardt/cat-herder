@@ -243,9 +243,9 @@ import Data.Array.Shaped
   , transpose
   , Shape
   -- , Rank
-  , rerank
-  , unravel
-  , ravel
+  -- , rerank
+  -- , unravel
+  -- , ravel
   , generate
   )
 

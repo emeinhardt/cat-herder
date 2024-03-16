@@ -58,7 +58,6 @@ import Data.Finite
   ( Finite
   , finite
   , getFinite
-  , finites
   )
 
 import Data.Functor.Rep qualified as R
