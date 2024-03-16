@@ -160,16 +160,6 @@ type (p ∷ κ → κ → Type) ::~> (q ∷ κ → κ → Type) =
   ∀ a b. a `p` b → a `q` b
 
 
--- type NatL p q =
---   ∀ a b. (Object p a, Object p b) ⇒ a `p` b → a `q` b
-
--- type NatR p q =
---   ∀ a b. (Object q a, Object q b) ⇒ a `p` b → a `q` b
-
--- type Nat p q =
---   ∀ a b. a `p` b → a `q` b
-
-
 
 {- | Categories form a category; instances of this typeclass are endofunctors in
 that category. Together with 'Fix', this permits the definition of recursion
@@ -182,27 +172,18 @@ See
  - Williams 2013, [/Fixing GADTs/](http://www.timphilipwilliams.com/posts/2013-01-16-fixing-gadts.html).
  - Milewski 2018, [/Free Monoidal Profunctors/](https://bartoszmilewski.com/2018/02/20/free-monoidal-profunctors).
 
-The looser constraints on the second term - and the lack (compare with
-Milewski's @HFunctor@) of methods enforcing that the result forms a category are
-motivated by folds: the in-flight type created by folding morphisms of a free
-category category into morphisms of another doesn't look to me like it has a
-sensible category instance, but I haven't thought about it much and could easily
-be wrong. -}
+The looser constraints on the second term — and the lack (compare with
+Milewski's @HFunctor@) of methods enforcing that the result forms a category —
+are motivated by folds: the in-flight type created by folding morphisms of a
+free category category into morphisms of another doesn't look to me like it has
+a sensible category instance, but I suspect I simply haven't thought about it
+enough. (An endofunctor in the category of categories by definition /ought/ to
+always map a morphism in one category to a morphism in another.) -}
 class HFunctor (η ∷ (κ → κ → Type) → κ → κ → Type) where
 
   {- | @hmap@ lifts a natural transformation into the endofunctor @η@. -}
-  hfmap ∷ ∀ p q. (
-                 --   (∀ x. Object p x ⇒ Object' (η p) x)
-                 -- , (∀ x. Object q x ⇒ Object' (η q) x)
-                   ∀ x. Object p x ⇒ Object' q x
-                 -- , ∀ x. Object (η p) x ⇒ Object' (η q) x
-                 )
+  hfmap ∷ ∀ p q. (∀ x. Object p x ⇒ Object' q x)
         ⇒ (p :~> q) → η p ::~> η q
-        -- ⇒ (p :~> q) → NatL (η p) (η q)
-        -- ⇒ (p :~> q) → NatR (η p) (η q)
-        -- ⇒ (p :~> q) → (η p :~> η q) -- restore
-  -- hfmap ∷ ∀ p q. (p :~> q) → (η p :~> η q)
-  -- hfmap ∷ ∀ p q. (p -| Nat ? |-> q) → (η p -| Nat ? |-> η q)
 
 
 {- | The fixpoint of an endofunctor in the category of categories. -}
@@ -227,32 +208,18 @@ instance (Category (η (Fix η))) ⇒ Category (Fix η) where
 
 {- | A catamorphism in the category of categories. -}
 cata ∷ ∀ η q a b.
-     ( HFunctor η
-     -- , Object (Fix η) a
-     -- , Object (Fix η) b
-     -- , (∀ x. Object (Fix η) x ⇒ Object' (η (Fix η)) x)
-     -- , (∀ x. Object (Fix η) x ⇒ Object' (η q)       x) -- restore
-     , (∀ x. Object (Fix η) x ⇒ Object' q x)
+     ( HFunctor η, (∀ x. Object (Fix η) x ⇒ Object' q x)
      )
-     ⇒ η q ::~> q  -- ^ An algebra.
-     -- ⇒ (η q :~> q) -- restore
+     ⇒ η q ::~> q         -- ^ An algebra.
      → Fix η a b → q a b
-cata alg = alg
-         ∘ hfmap (cata alg)
-         ∘ out
+cata alg = alg ∘ hfmap (cata alg) ∘ out
 
 
 {- | An anamorphism in the category of categories. -}
 ana ∷ ∀ η q a b.
     ( HFunctor η
-    -- , Object q a, Object q b
     , (∀ x. Object q x ⇒ Object' (Fix η) x)
-    -- , (∀ x. Object q x ⇒ Object' (η q)   x)
     )
-    ⇒ q ::~> η q  -- ^ A coalgebra for /η q/.
-
-    -- -- ⇒ NatL q (η q)
-    -- -- ⇒ (q :~> η q)
-
+    ⇒ q ::~> η q         -- ^ A coalgebra for /η q/.
     → q a b → Fix η a b
 ana coalg = In ∘ hfmap (ana coalg) ∘ coalg

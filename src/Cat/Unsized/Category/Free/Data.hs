@@ -224,14 +224,14 @@ mkAlg ∷ ∀ κ (k ∷ κ → κ → Type) (t ∷ κ → κ → Type).
             )
      ⇒ a `k` b
      → a `t` b
-     )
+     )               -- ^ A function mapping primitive morphisms into the target category.
   → CatF k t ::~> t -- NatR
   -- → (CatF k) t :~> t
 mkAlg _ (IdF @k_ @t_ @a) = id @κ @t @a
 mkAlg _ (g `OfF` f) = g . f
 mkAlg α (EmbF    f) = α f
 
-
+{- | Alternative to @foldMap'@ based on 'cata'. -}
 foldMap' ∷ ∀ κ (k ∷ κ → κ → Type) (t ∷ κ → κ → Type) (a ∷ κ) (b ∷ κ).
   ( Category t
   -- , ObjectOf k a
@@ -252,7 +252,7 @@ foldMap' ∷ ∀ κ (k ∷ κ → κ → Type) (t ∷ κ → κ → Type) (a ∷
             )
      ⇒ x `k` y
      → x `t` y
-     )
+     )                         -- ^ A function mapping primitive morphisms into the target category.
   → (  a -| Fix (CatF k) |-> b
     →  a        `t`          b
     )

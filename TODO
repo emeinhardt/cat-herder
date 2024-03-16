@@ -19,10 +19,8 @@
 
   - Cat.Unsized.Category.Free.Data - cleanup @foldMap@, @fixed@
   - Cat.Sized.Semigroupoid.Free.Data - cleanup @foldMap@
-  - Cat.Sized.Category.Free.Data - cleanup @foldMap@, @fixed@
+  - Cat.Sized.Category.Free.Data - cleanup @foldMap@
   - Cat.Sized.Monoidal.Free.Data - cleanup @foldMap@
-  - Cat.Unsized.Profunctor - does @Dimap@ need to exist?
-  - Cat.Sized.Profunctor - does @Dimap@ need to exist?
   - Cat.Sized.Braided
   - Cat.Sized.Diagonal
 
@@ -40,10 +38,18 @@
     pattern functors should be expressible in terms of `ana`/`cata`. Figure out
     what needs to happen with constraints (or use of continuations +
     existentially quantified sizes, or ...) to make this work correctly.
+      - Propagate/translate what works for @Cat.Sized.Category.Free.Data@ to
+        @Cat.Unsized.Category.Free.Data@.
+        - Work out the smallest unit of success in
+          @Cat.Unsized.Category.Free.Instances@ first...
+      - Propagate what works for @Cat.Sized.Category.Free.Data@ to
+        @Cat.Sized.Monoidal.Free.Data@ + further upstream classes.
 
-  - Empirical tests:
+  - More robust empirical tests:
       - 'Cat.Sized.Examples.Circuit': can you convert boolean expressions
         into/between normal forms?
+          - Do you need/want different types (and perhaps a different —
+            non-example — module altogether) for this?
       - Either example: incremental computation and adjustable evaluation
         traces expressed via folds?
 

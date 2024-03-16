@@ -40,8 +40,15 @@ import GHC.TypeNats
 
 import Data.Bool hiding (not)
 
+import Cat.Sized.Functor
+  ( Fix ( In
+        )
+  , cata
+  )
+
 import Cat.Sized.Semigroupoid.Class
   ( Sized ( Sized )
+  , Object'
   )
 
 import Cat.Sized.Semigroupoid.Instances ()
@@ -57,6 +64,14 @@ import Cat.Sized.Category.Free.Data
         , Of
         )
   , foldMap
+  , Cat'
+  , CatF ( IdF
+         , EmbF
+         , OfF
+         )
+  , mkAlg
+  , fixed
+  , unfixed
   )
 
 import Cat.Sized.Semigroupoid.Free.Instances ()
@@ -116,7 +131,7 @@ noOp ∷ (ObjectOf φ ArithFunc n a)
   ⇒ FreeArith φ n n a a
 noOp = Id
 
-one ∷  FreeArith φ 0 1 () Int
+one ∷ FreeArith φ 0 1 () Int
 one = Emb $ Lit 1
 
 two ∷ FreeArith φ 0 1 () Int
@@ -157,23 +172,121 @@ evalArithPrimV (Ite   f t) = Sized $ pure <<<  bool f t  <<< VS.head
 
 >>> import Cat.Sized.Semigroupoid.Class (unSized)
 >>> import Data.Maybe (fromJust)
->>> :t (unSized $ evalArith (Emb $ Lit (3 ∷ Int)))
-(unSized $ evalArith (Emb $ Lit (3 ∷ Int)))
+>>> :t (unSized $ evalFreeArith (Emb $ Lit (3 ∷ Int)))
+(unSized $ evalFreeArith (Emb $ Lit (3 ∷ Int)))
   :: VS.Vector 0 () -> VS.Vector 1 Int
->>> (unSized $ evalArith (Emb $ Lit (3 ∷ Int))) $ (fromJust $ VS.fromList @0 [()])
+>>> (unSized $ evalFreeArith (Emb $ Lit (3 ∷ Int))) $ (fromJust $ VS.fromList @0 [()])
 Vector [3]
 it :: VS.Vector 1 Int
->>> (unSized $ evalArith $ alsoOneIsOne') $ (fromJust $ VS.fromList @0 [()])
+>>> (unSized $ evalFreeArith $ alsoOneIsOne') $ (fromJust $ VS.fromList @0 [()])
 Vector [1]
 it :: VS.Vector 1 Int
->>> (unSized $ evalArith two) $ pure ()
+>>> (unSized $ evalFreeArith two) $ pure ()
 Vector [2]
 it :: VS.Vector 1 Int
 -}
-evalArith ∷ ∀ n m a b.
-          ( ObjectOf VS.Vector ArithFunc n a
-          , ObjectOf VS.Vector ArithFunc m b
-          )
-          ⇒ FreeArith    VS.Vector n m a b
-          → (Sized (->)) VS.Vector n m a b
-evalArith = foldMap evalArithPrimV
+evalFreeArith ∷ ∀ n m a b.
+  ( ObjectOf VS.Vector ArithFunc n a
+  , ObjectOf VS.Vector ArithFunc m b
+  )
+  ⇒ FreeArith    VS.Vector n m a b
+  → (Sized (->)) VS.Vector n m a b
+evalFreeArith = foldMap evalArithPrimV
+
+
+
+
+{- |
+> Cat' ArithFunc = Fix (CatF ArithFunc)
+> Cat' ArithFunc ≅ Cat ArithFunc
+ -}
+type FreeArith' = Cat' ArithFunc
+type FreeArithF = CatF ArithFunc
+
+
+noOp' ∷ ∀ φ n a. ( ObjectOf φ ArithFunc n a )
+  ⇒ FreeArith' φ n n a a
+noOp' = In IdF
+
+one' ∷ FreeArith' φ 0 1 () Int
+one' = In $ EmbF $ Lit 1
+
+two'∷ FreeArith' φ 0 1 () Int
+two'= In $ EmbF $ Lit 2
+
+sub1' ∷ FreeArith' φ 1 1 Int Int
+sub1' = In $ EmbF Dec
+
+alsoOne' ∷ FreeArith' φ 0 1 () Int
+alsoOne' = In $ sub1' `OfF` two'
+
+alsoOneIsOne'' ∷ FreeArith' φ 0 1 () Bool
+alsoOneIsOne'' = In $ In (EmbF (EqlTo 1)) `OfF` alsoOne'
+
+boolToInt' ∷ FreeArith' φ 1 1 Bool Int
+boolToInt' = In $ EmbF (Ite 0 1)
+
+
+{- |
+
+>>> :t evalFreeArith' $ In $ EmbF $ Lit True
+evalFreeArith' $ In $ EmbF $ Lit True
+  :: Sized (->) VS.Vector 0 1 () Bool
+>>> (unSized $ evalFreeArith' (In $ EmbF $ Lit True)) $ pure ()
+Vector [True]
+it :: VS.Vector 1 Bool
+>>> unSized (evalFreeArith' alsoOneIsOne'') $ pure ()
+Vector [True]
+it :: VS.Vector 1 Bool
+-}
+evalFreeArith' ∷ ∀ n m a b.
+  (∀ i x. ObjectOf VS.Vector ArithFunc i x ⇒ Object' VS.Vector (Sized (->)) i x)
+  ⇒ FreeArith'   VS.Vector n m a b
+  → (Sized (->)) VS.Vector n m a b
+evalFreeArith' = cata $ mkAlg evalArithPrimV
+
+
+{- | Evaluate @FreeArith'@ morphisms by first converting them via a catamorphism
+('unfixed') to @FreeArith@ morphisms.
+
+>>> :t evalFreeArithUnfixed' $ In $ EmbF $ Lit True
+evalFreeArithUnfixed' $ In $ EmbF $ Lit True
+  :: Sized (->) VS.Vector 0 1 () Bool
+>>> (unSized $ evalFreeArithUnfixed' (In $ EmbF $ Lit True)) $ pure ()
+Vector [True]
+it :: VS.Vector 1 Bool
+>>> unSized (evalFreeArithUnfixed' alsoOneIsOne'') $ pure ()
+Vector [True]
+it :: VS.Vector 1 Bool
+-}
+evalFreeArithUnfixed' ∷ ∀ n m a b.
+  ( ObjectOf VS.Vector ArithFunc n a
+  , ObjectOf VS.Vector ArithFunc m b
+  )
+  ⇒ FreeArith'   VS.Vector n m a b
+  → (Sized (->)) VS.Vector n m a b
+evalFreeArithUnfixed' = evalFreeArith <<< unfixed
+
+
+
+{- | Evaluate @FreeArith@ morphisms by first converting them via an anamorphism
+('fixed') to @FreeArith'@ morphisms.
+
+>>> :t (unSized $ evalFreeArithFixed (Emb $ Lit (3 ∷ Int)))
+(unSized $ evalFreeArithFixed (Emb $ Lit (3 ∷ Int)))
+  :: VS.Vector 0 () -> VS.Vector 1 Int
+>>> (unSized $ evalFreeArithFixed (Emb $ Lit (3 ∷ Int))) $ (fromJust $ VS.fromList @0 [()])
+Vector [3]
+it :: VS.Vector 1 Int
+>>> (unSized $ evalFreeArithFixed $ alsoOneIsOne') $ (fromJust $ VS.fromList @0 [()])
+Vector [1]
+it :: VS.Vector 1 Int
+>>> (unSized $ evalFreeArithFixed two) $ pure ()
+Vector [2]
+it :: VS.Vector 1 Int
+-}
+evalFreeArithFixed ∷ ∀ n m a b.
+  (∀ i x. ObjectOf VS.Vector ArithFunc i x ⇒ Object' VS.Vector (Sized (->)) i x)
+  ⇒ FreeArith    VS.Vector n m a b
+  → (Sized (->)) VS.Vector n m a b
+evalFreeArithFixed = evalFreeArith' <<< fixed

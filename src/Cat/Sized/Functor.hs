@@ -184,20 +184,10 @@ class HFunctor (η ∷ ((Nat → κ → κ) → Nat → Nat → κ → κ → Ty
   type HFunctorObj η φ p q = Unconstrained4 η φ p q
 
   {- | @hmap@ lifts a natural transformation into the endofunctor @η@. -}
-  hfmap ∷ ∀ φ p q. (
-                   --   (∀ x. Object p x ⇒ Object' (η p) x)
-                   -- , (∀ x. Object q x ⇒ Object' (η q) x)
-                     ∀ i x. Object φ p i x ⇒ Object' φ q i x
-                   -- , ∀ x. Object (η p) x ⇒ Object' (η q) x
+  hfmap ∷ ∀ φ p q. ( ∀ i x. Object φ p i x ⇒ Object' φ q i x
                    , HFunctorObj η φ p q
-                   -- , ∀ i x. HFunctorObj η φ p q i x
                    )
         ⇒ NT φ p q → NT' φ (η p) (η q)
-        -- ⇒ (p :~> q) → NatL (η p) (η q)
-        -- ⇒ (p :~> q) → NatR (η p) (η q)
-        -- ⇒ (p :~> q) → (η p :~> η q) -- restore
-  -- hfmap ∷ ∀ p q. (p :~> q) → (η p :~> η q)
-  -- hfmap ∷ ∀ p q. (p -| Nat ? |-> q) → (η p -| Nat ? |-> η q)
 
 
 {- | The fixpoint of an endofunctor in the category of monoidal categories with product /φ/. -}
@@ -229,31 +219,20 @@ instance (Category φ (η (Fix η))) ⇒ Category φ (Fix η) where
 {- | A catamorphism in the category of categories. -}
 cata ∷ ∀ φ η q n m a b.
      ( HFunctor η
-     -- , Object φ (Fix η) n a
-     -- , Object φ (Fix η) m b
      , (∀ i x. Object φ (Fix η) i x ⇒ Object' φ q i x)
      , HFunctorObj η φ (Fix η) q
      )
      ⇒ NT' φ (η q) q        -- ^ An algebra for /q/.
      → Fix η φ n m a b → q φ n m a b
-cata alg = alg
-         ∘ hfmap (cata alg)
-         ∘ out
+cata alg = alg ∘ hfmap (cata alg) ∘ out
 
 
 {- | An anamorphism in the category of categories. -}
 ana ∷ ∀ φ η q n m a b.
     ( HFunctor η
-    -- , Object φ q n a, Object φ q m b
     , (∀ i x. Object φ q i x ⇒ Object' φ (Fix η) i x)
-    -- , (∀ x. Object q x ⇒ Object' (η q)   x)
     , HFunctorObj η φ q (Fix η)
     )
-    ⇒ NT' φ q (η q)        -- ^ A coalgebra for /η q/.
-
-    -- -- ⇒ q ::~> η q
-    -- -- ⇒ NatL q (η q)
-    -- -- ⇒ (q :~> η q)
-
+    ⇒ NT' φ q (η q)                  -- ^ A coalgebra for /η q/.
     → q φ n m a b → Fix η φ n m a b
 ana coalg = In ∘ hfmap (ana coalg) ∘ coalg

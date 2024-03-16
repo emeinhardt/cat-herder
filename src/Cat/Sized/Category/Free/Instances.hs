@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK show-extensions #-}
 -- |
 
 module Cat.Sized.Category.Free.Instances

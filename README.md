@@ -64,8 +64,8 @@ typed functional programming (Haskell in particular), and that
      - Evaluating terms of such a language.
  - You understand why problems like these and their solutions productively
    generalize to (surprisingly) many other tasks in software development,
-   starting with easy-to-find resources on topics like folds, functors, monads,
-   and the many things you can do with these abstractions.
+   including at least what is possible by focusing on folds, functors, and
+   monads.
 
 The README also assumes some basic prior introduction to the relation between
 typed functional programming and category theory. If you are unsure if you meet

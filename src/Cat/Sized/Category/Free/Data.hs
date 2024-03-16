@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK show-extensions #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 -- |
@@ -20,7 +21,11 @@ module Cat.Sized.Category.Free.Data
   , Cat'
   , mkAlg
   , foldMap'
+  , fixed
+  , fixedCoalg
   , fixed'
+  , unfixed
+  , unfixedAlg
   , unfixed'
 
    -- * Re-exports from "Cat.Unsized.Semigroupoid.Free.Data"
@@ -42,15 +47,14 @@ import Cat.Operators
   )
 
 import Cat.Sized.Functor
-  ( -- NT
-    NT'
+  ( NT'
   , HFunctor ( hfmap
+             , HFunctorObj
              )
   , Fix ( In
-        -- , out
         )
   , cata
-  -- , ana
+  , ana
   )
 
 import Cat.Sized.Semigroupoid.Class
@@ -91,7 +95,6 @@ data Cat (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type) (φ 
       ( KnownNat n
       , ObjectOf φ k n a
       )
-      -- ( ObjectOf φ k n a )
       ⇒ a -| Cat k φ n n |-> a
 
 deriving instance (∀ i j x y. Show (x -| k φ i j |-> y)) ⇒ Show (a -| Cat k φ n m |-> b)
@@ -125,30 +128,30 @@ foldMap α (g `Of` f) = foldMap α g . foldMap α f
 
 
 -- TODO @limbo-test: Confirm that GHC can actually infer types using this, then clean up and export.
-foldMap_ ∷ ∀ κ
-          (φ ∷  Nat → κ → κ)
-          (γ ∷  Nat → κ → κ)
-          (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
-          (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
-          (n ∷ Nat) (m ∷ Nat)
-          (a ∷ κ)   (b ∷ κ).
-        ( ObjectOf φ k n a, ObjectOf φ k m b
-        , Object   γ t n a, Object   γ t m b
-        , ∀ i x. ObjectOf φ k i x ⇒ Object' γ t i x
-        , Category φ (Cat k), Category γ t
-        )
-        ⇒ (∀ i j x y.
-           ( ObjectOf φ k i x, ObjectOf φ k j y
-           , Object   γ t i x, Object   γ t j y
-           )
-           ⇒ x -| k φ i j |-> y
-           → x -| t γ i j |-> y
-        )                             -- ^ A function maps primitive morphisms into the target category.
-        → a -| (Cat k) φ n m |-> b    -- ^ A path in the free category over @k@.
-        → a -|   t     γ n m |-> b    -- ^ The resulting morphism in @t@.
-foldMap_ α (Emb f)    = α f
-foldMap_ _  Id        = id
-foldMap_ α (g `Of` f) = foldMap_ α g . foldMap_ α f
+-- foldMap_ ∷ ∀ κ
+--           (φ ∷  Nat → κ → κ)
+--           (γ ∷  Nat → κ → κ)
+--           (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
+--           (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
+--           (n ∷ Nat) (m ∷ Nat)
+--           (a ∷ κ)   (b ∷ κ).
+--         ( ObjectOf φ k n a, ObjectOf φ k m b
+--         , Object   γ t n a, Object   γ t m b
+--         , ∀ i x. ObjectOf φ k i x ⇒ Object' γ t i x
+--         , Category φ (Cat k), Category γ t
+--         )
+--         ⇒ (∀ i j x y.
+--            ( ObjectOf φ k i x, ObjectOf φ k j y
+--            , Object   γ t i x, Object   γ t j y
+--            )
+--            ⇒ x -| k φ i j |-> y
+--            → x -| t γ i j |-> y
+--         )                             -- ^ A function maps primitive morphisms into the target category.
+--         → a -| (Cat k) φ n m |-> b    -- ^ A path in the free category over @k@.
+--         → a -|   t     γ n m |-> b    -- ^ The resulting morphism in @t@.
+-- foldMap_ α (Emb f)    = α f
+-- foldMap_ _  Id        = id
+-- foldMap_ α (g `Of` f) = foldMap_ α g . foldMap_ α f
 
 
 
@@ -173,7 +176,6 @@ data CatF (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
       , ObjectOf φ k n a
       , Object   φ t n a
       )
-      -- ( ObjectOf φ k n a )
       ⇒ a -| CatF k t φ   n n |-> a
 
   OfF ∷ ∀ φ k t n m l a b x.
@@ -217,8 +219,7 @@ mkAlg ∷ ∀ κ (φ ∷ Nat → κ → κ)
      ⇒ a -| k φ n m |-> b
      → a -| t φ n m |-> b
      )                            -- ^ A function mapping primitives (/k/-morphisms) into the target category.
-  → NT' φ (CatF k t) t -- NatR
-  -- → (CatF k) t :~> t
+  → NT' φ (CatF k t) t
 mkAlg _ (IdF @k_ @t_ @a) = id @κ @φ @t
 mkAlg _ (g `OfF` f)      = g . f
 mkAlg α (EmbF    f)      = α f
@@ -226,31 +227,22 @@ mkAlg α (EmbF    f)      = α f
 
 foldMap' ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
-   t
-  -- (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
+  (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (n ∷ Nat) (m ∷ Nat)
   (a ∷ κ) (b ∷ κ).
   ( Category φ t
-  -- , ObjectOf k a
-  -- , ObjectOf k b
-  -- , ∀ x. ObjectOf k x ⇒ Object' t x
-  , Object φ (Fix (CatF k)) n a
-  , Object φ (Fix (CatF k)) m b
-  -- , (∀ x. Object (Fix η) x ⇒ Object' (η (Fix η)) x)
-  -- , (∀ x. Object (Fix (CatF k)) x ⇒ Object' ((CatF k) t) x) -- restore
+  -- , Object φ (Fix (CatF k)) n a
+  -- , Object φ (Fix (CatF k)) m b
   , (∀ i x. Object φ (Fix (CatF k)) i x ⇒ Object' φ  t      i x)
   )
-  ⇒ (∀ i j x y. (
-              -- ∀ x. ObjectOf k x ⇒ Object' t x
-              ObjectOf φ k i x
-            , ObjectOf φ k j y
-            , Object   φ t i x
-            , Object   φ t j y
-            )
+  ⇒ (∀ i j x y.
+     ( ObjectOf φ k i x
+     , ObjectOf φ k j y
+     , Object   φ t i x
+     , Object   φ t j y
+     )
      ⇒ x -| k φ i j |-> y
      → x -| t φ i j |-> y
-     -- ⇒ x `k` y
-     -- → x `t` y
      )                            -- ^ A function mapping primitives (/k/-morphisms) into the target category.
   → (  a -| Fix (CatF k) φ n m |-> b
     →  a -|        t     φ n m |-> b
@@ -258,49 +250,72 @@ foldMap' ∷ ∀ κ (φ ∷ Nat → κ → κ)
 foldMap' α = cata (mkAlg α)
 
 
-{- | Convert a 'Cat k' morphism to a 'Cat\' k' morphism. -}
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @fixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Cat k@ morphism to a @Cat' k@ morphism. -}
 fixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
   , ∀ i x. ObjectOf φ      k  i x ⇒ Object' φ (Cat  k) i x
   , ∀ i x. Object   φ (Cat k) i x ⇒ Object' φ (Cat' k) i x
   )
-  ⇒ a -| Cat  k φ n m |-> b  -- ^ A 'Cat k' morphism.
-  → a -| Cat' k φ n m |-> b  -- ^ An equivalent morphism in 'Fix (CatF k)'.
+  ⇒ a -| Cat  k φ n m |-> b  -- ^ A @Cat k@ morphism.
+  → a -| Cat' k φ n m |-> b  -- ^ An equivalent morphism in @Fix (CatF k)@.
 fixed' Id         = In IdF
 fixed' (Emb m)    = In (EmbF m)
 fixed' (g `Of` f) = In (fixed' g `OfF` fixed' f)
 
 
--- TODO
--- fixedCoalg ∷ (∀ i x. ObjectOf φ k i x ⇒ Object' φ (Cat k) i x ) ⇒
---   NT  φ (Cat k) (CatF k (Cat k))
--- fixedCoalg Id         = IdF
--- fixedCoalg (Emb m)    = EmbF m
--- fixedCoalg (g `Of` f) = g `OfF` f
-
--- fixed ∷ ∀ k φ n m a b.
---   ( ObjectOf φ k n a, ObjectOf φ k m b
---     -- , ∀ x. ObjectOf k x ⇒ Object' (Cat k) x
---   , ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Cat k) i x
---   -- , ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Cat' k) i x
---   , ∀ i x. Object φ (Cat k) i x ⇒ Object' φ (Cat' k) i x
---   )
---   ⇒ a -| Cat  k φ n m |-> b
---   → a -| Cat' k φ n m |-> b
--- fixed = ana fixedCoalg
---   -- fixedCoalg_ Id         = IdF
---   -- fixedCoalg_ (Emb m)    = EmbF m
---   -- fixedCoalg_ (g `Of` f) = g `OfF` f
+{- | Coalgebra for converting a @Cat k@ morphism to a @Cat' k@ morphism. -}
+fixedCoalg ∷ ∀ φ k n m a b.
+  ( ∀ j x. ObjectOf φ k j x ⇒ Object' φ (Cat k) j x)  -- Constraint can be eliminated wherever instances from Cat.Sized.Category.Free.Instances are available.
+  ⇒ a -|         (Cat k)  φ n m |-> b
+  → a -| (CatF k (Cat k)) φ n m |-> b
+fixedCoalg Id         = IdF
+fixedCoalg (Emb m)    = EmbF m
+fixedCoalg (g `Of` f) = g `OfF` f
 
 
-{- | Convert a 'Cat\' k' morphism to a 'Cat k' morphism. -}
+{- | Convert a @Cat k@ morphism to a @Cat' k@ morphism. -}
+fixed ∷ ∀ k φ n m a b.
+  ( -- ∀ i x. ObjectOf φ k i x ⇒ Object' φ (CatF k (Cat k)) i x  -- Only this Constraint is necessary wherever instances from Cat.Sized.Category.Free.Instances are available.
+    ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Cat k) i x
+  , ∀ i x. Object φ (Cat k) i x ⇒ Object' φ (Cat' k) i x
+  , HFunctorObj (CatF k) φ (Cat k) (Cat' k)
+  )
+  ⇒ a -| Cat  k φ n m |-> b  -- ^ A @Cat k@ morphism.
+  → a -| Cat' k φ n m |-> b  -- ^ A @Fix (CatF k)@ morphism.
+fixed = ana fixedCoalg
+
+
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @unfixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Cat' k@ morphism to a @Cat k@ morphism. -}
 unfixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
   , ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Cat k) i x
   , ∀ i x. Object φ (Cat k) i x ⇒ Object' φ (Cat' k) i x
   )
-  ⇒ a -| Cat' k φ n m |-> b  -- ^ A 'Fix (CatF k)' morphism.
-  → a -| Cat  k φ n m |-> b  -- ^ An equivalent 'Cat k' morphism.
+  ⇒ a -| Cat' k φ n m |-> b  -- ^ A @Fix (CatF k)@ morphism.
+  → a -| Cat  k φ n m |-> b  -- ^ An equivalent @Cat k@ morphism.
 unfixed' (In IdF)         = Id
 unfixed' (In (EmbF m))    = Emb m
 unfixed' (In (g `OfF` f)) = unfixed' g `Of` unfixed' f
+
+
+{- | Algebra for converting a @Cat' k@ morphism to a @Cat k@ morphism. -}
+unfixedAlg ∷ ∀ k φ n m a b.
+    a -| CatF k (Cat k) φ n m |-> b
+  → a -|        (Cat k) φ n m |-> b
+unfixedAlg IdF         = Id
+unfixedAlg (g `OfF` f) = g `Of` f
+unfixedAlg (EmbF m)    = Emb m
+
+
+{- | Convert a @Cat' k@ morphism to a @Cat k@ morphism. -}
+unfixed ∷ ∀ k φ n m a b.
+  (∀ i x. Object φ (Cat' k) i x ⇒ Object' φ (Cat k) i x)  -- Constraint can be eliminated wherever instances from Cat.Sized.Category.Free.Instances are available.
+  ⇒ a -| Cat' k φ n m |-> b  -- ^ A @Cat' k@ morphism.
+  → a -| Cat  k φ n m |-> b  -- ^ An equivalent @Cat k@ morphism.
+unfixed = cata unfixedAlg
