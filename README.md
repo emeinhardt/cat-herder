@@ -1,9 +1,7 @@
 # `cat-herder`
 
 A package for modeling (free) categories with constraints + *n*-ary monoidal
-(co)products, intended to support development of embedded domain-specific
-languages modeled as monoidal categories: "programs as paths in a directed
-hypergraph".
+products, intended to support development of embedded domain-specific languages.
 
 
 ## Table of contents
@@ -58,14 +56,13 @@ background.
 This README assumes you have more than a beginner's level of understanding
 typed functional programming (Haskell in particular), and that 
 
- - You've had multiple exposures to at least a few ways of doing things like
+ - You've had multiple exposures to at least a few ways (e.g. using some
+   combination of folds, functors, and monads) of doing things like
      - Defining a language of expressions that models some domain.
      - Parsing or pretty-printing terms of such a language.
      - Evaluating terms of such a language.
  - You understand why problems like these and their solutions productively
-   generalize to (surprisingly) many other tasks in software development,
-   including at least what is possible by focusing on folds, functors, and
-   monads.
+   generalize to many other tasks in software development.
 
 The README also assumes some basic prior introduction to the relation between
 typed functional programming and category theory. If you are unsure if you meet
@@ -73,7 +70,6 @@ this description but have a comfortable working knowledge of what a functor and
 a monad are in the context of typed functional programming, Conal Elliott's
 papers or Walters (1992) — see the [resources](#related-resources) list — might
 be good places to look.
-
 
 
 ## Why
@@ -92,25 +88,26 @@ motivate this package.
     bundles a lot of functionality in one package, but there are many domains
     where you don't want to be obligated to admit and deal with arbitrary terms
     of type `(->)` in your EDSL.
- 3. **Choose your (co)product functor.** Most category/profunctor libraries
-    either limit the user to `(,)` ± `Either` or to a variation on cons-lists
-    for representing (co)products. If you can live without heterogeneously-typed
+ 3. **Choice of (co)product functor.** Most category/profunctor libraries either
+    limit the user to `(,)` ± `Either` or to a variation on cons-lists for
+    representing (co)products. If you can live without heterogeneously-typed
     products, then using trees of `(,)`/`Either` of any size to simulate a
-    collection can quickly become unwieldy; on the other hand, you may not
-    want to be limited to linked-lists to model monoidal products.
+    collection can quickly become unwieldy; on the other hand, you may not want
+    to be limited to linked-lists to model monoidal products.
  4. **Type-level sizes make more functions total and better model many
     domains.** The classic example of dependent types is a sized collection type
-    where a type-level natural number indicates the cardinality; there are many
-    unsafe functions on collections whose runtime errors or more complex return
-    type (an error `Applicative`) becomes a compile-time bug in this setting.
-    For modeling many domains, finitary `Representable` and `Traversable`
-    container types are a natural choice for a product functor, and there many
-    plausibly good choices within that class.
+    `f n a` where one of the type parameters is a natural number `n` indicating
+    the cardinality of the collection; there are many unsafe functions on garden
+    variety collection types whose runtime errors or more complex return types
+    (an error `Applicative`) become a compile-time bug in this setting. For
+    modeling many domains, finitary `Representable` and `Traversable` container
+    types are a natural choice for a product functor, and there many plausibly
+    or equally good choices within that class.
  5. **Linear-/affinely-typed domain modeling.** Most category/profunctor
     libraries make a pragmatic trade-off and bundle logically independent
-    capabilities into a smaller typeclass hierarchy. On the other hand, if you
-    want to model any domain where resource accounting is desirable or critical,
-    then you *want* a finer-grained ("substructural") hierarchy where copying, 
+    capabilities into a smaller typeclass hierarchy. However, if you want to
+    model any domain where resource accounting is desirable or critical, then
+    you *want* a finer-grained ("substructural") hierarchy where copying,
     destruction, and permutations can be more carefully tracked.
     
 Those are the 5 main reasons that motivated creating this package instead of
@@ -217,10 +214,10 @@ Another way of putting this is that this package most closely models
 hence can be specialized to model multicategories, operads, Lawvere theories, or
 polycategories.
 
-Finally, in domains with nested products, another natural way of thinking about
-the resulting kind of categories modeled by this package is an APL-like
-concatenative ("stack-based") array language where reshaping, reranking, and
-broadcasting combinators (e.g. as provided by
+Finally, in domains where nested products make sense, another natural way of
+thinking about the resulting kind of categories modeled by this package is an
+APL-like concatenative ("stack-based") array language where reshaping,
+reranking, and broadcasting combinators (e.g. as provided by
 [orthotope](https://hackage.haskell.org/package/orthotope)) are a natural medium
 for describing many domain computations and a substitute for combinators a
 functional programmer without array language exposure might otherwise reach for

@@ -44,22 +44,23 @@ description:
       either limit the user to @(,)@ ± @Either@ or to a variation on cons-lists
       for representing (co)products. If you can live without
       heterogeneously-typed products, then using trees of @(,)@/@Either@ of any
-      size to simulate a collection can quickly become unwieldily; on the other
+      size to simulate a collection can quickly become unwieldy; on the other
       hand, you may not want to be limited to linked-lists to model monoidal
       products.
-   4. __Type-level sizes make more functions total and better model many
-      domains.__ The classic example of dependent types is a sized collection
-      type where a type-level natural number indicates the cardinality; there
-      are many unsafe functions on collections whose runtime errors or more
-      complex return type (an error @Applicative@) becomes a compile-time bug in
-      this setting. For modeling many domains, finitary @Representable@ and
-      @Traversable@ container types are a natural choice for a product functor,
-      and there many plausibly good choices within that class.
+   4. __Type-level sizes make more functions total and better model many domains.__
+      The classic example of dependent types is a sized collection type @f n a@
+      where one of the type parameters is a natural number @n@ indicating the
+      cardinality of the collection; there are many unsafe functions on garden
+      variety collection types whose runtime errors or more complex return types
+      (an error @Applicative@) become a compile-time bug in this setting. For
+      modeling many domains, finitary @Representable@ and @Traversable@
+      container types are a natural choice for a product functor, and there many
+      plausibly or equally good choices within that class.
    5. __Linear-/affinely-typed domain modeling.__ Most category/profunctor
       libraries make a pragmatic trade-off and bundle logically independent
-      capabilities into a smaller typeclass hierarchy. On the other hand, if you
-      want to model any domain where resource accounting is desirable or
-      critical, then you /want/ a finer-grained hierarchy where copying,
+      capabilities into a smaller typeclass hierarchy. However, if you want to
+      model any domain where resource accounting is desirable or critical, then
+      you /want/ a finer-grained ("substructural") hierarchy where copying,
       destruction, and permutations can be more carefully tracked.
 
   Those are the 5 reasons that motivate this package. However, the package is
@@ -79,12 +80,14 @@ description:
   Some of these costs are borne principally in development of the library and
   not necessarily by downstream use: for example, nearly every constrained
   typeclass has a default trivial constraint, and between that and e.g. choosing
-  a specific concrete type at any site of use, GHC has little or no trouble
-  reasoning about verbose and intimidating-looking piles of constraints.
+  specific concrete types at sites of use, GHC often has little or no trouble
+  reasoning that a hefty and intimidating-looking piles of constraints are
+  satisfied.
 
   In any case, as an experiment, the primary goal of the package currently is to
-  flesh out basic functionality for productive EDSL development to assess the
-  cost/benefit ratio of design decisions: this may motivate a significant
+  flesh out basic functionality for productive EDSL development and assess the
+  cost/benefit ratio of design decisions on how easy that that basic
+  functionality is to achieve and then use: this may motivate a significant
   rewrite, giving up constraints, or focusing more effort on unsized containers.
 
 
@@ -152,9 +155,10 @@ description:
   to modeling a program fragment as
 
    - A path in a directed hypergraph where vertices are types (not values) and
-     edges are function-like terms.
+     edges are function-like terms — bifunctors contravariant in one argument
+     and covariant in the other.
 
-       - In a Cartesian closed category like @(->)@, currying lets us think of
+       - In a cartesian closed category like @(->)@, currying lets us think of
          programs as paths in a directed graph (no proper hyperedges); giving
          this up (or not making it the default assumption) means some of the
          tree-like structure of programs comes back into focus.
@@ -173,7 +177,7 @@ description:
   medium for describing many domain computations and a substitute for
   combinators a functional programmer without array language exposure might
   otherwise reach for — and which may not even be available in a category that
-  isn't Cartesian closed.
+  isn't cartesian closed.
 
 
   == Haddock readability
@@ -188,14 +192,13 @@ description:
     out.) As a result, for some questions it will be easier to browse source
     files rather than the Haddock docs.
 
-   == Give me details ± examples!
+   == More information + examples
 
-   1. See the modules with @Examples@ in the path to get your hands dirty, or...
+   1. See the modules with @Examples@ in the path, or...
 
    2. Take a look at the
-      [github README](https://github.com/emeinhardt/cat-herder) for more
-      information at a bit more granularity than this cabal project
-      description, or
+      [github README](https://github.com/emeinhardt/cat-herder) for more granular
+      information than this cabal project description, or
 
    3. Take a look at the root module @Cat@ for a documentation entry-point that
       dives deeper yet into the derivation of the basic types of this package and

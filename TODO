@@ -91,3 +91,10 @@
   - tangent bundle/finitary discrete derivative comonad
 
 - repository CI / fix cachix setup
+
+- Multi-cradle project:
+  - cat-herder
+  - cat-herder-test
+  - cat-herder-base
+  - cat-herder-vector-sized
+  - cat-herder-orthotope
