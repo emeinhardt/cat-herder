@@ -1,8 +1,8 @@
 {-# OPTIONS_HADDOCK show-extensions #-}
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 -- |
 
 module Cat.Sized.Braided.Free.Data
@@ -55,10 +55,14 @@ module Cat.Sized.Braided.Free.Data
           -- , PermuteF
           )
   , Swap'
-  , fixed'
-  , unfixed'
-  , mkAlg
   , foldMap'
+  , mkAlg
+  , fixed
+  , fixedCoalg
+  , fixed'
+  , unfixed
+  , unfixedAlg
+  , unfixed'
   ) where
 
 
@@ -90,16 +94,14 @@ import Cat.Operators
   )
 
 import Cat.Sized.Functor
-  ( -- NT
-    NT'
+  ( NT'
   , HFunctor ( hfmap
              , HFunctorObj
              )
   , Fix ( In
-        -- , out
         )
   , cata
-  -- , ana
+  , ana
   )
 
 import Cat.Sized.Semigroupoid.Class
@@ -764,20 +766,21 @@ instance HFunctor (SwapF k) where
   -- -- hfmap α (PermuteF) =
 
 
--- TODO As with 'Cat._.Category.Free.Data', rewrite in terms of an
--- anamorphism/catamorphism ± sort out why that's more painful/awkward
-{- | Convert a 'Swap k' morphism to a 'Swap\' k' morphism. -}
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @fixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Swap k@ morphism to a @Swap' k@ morphism. -}
 fixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
-  , ∀ i x. ObjectOf φ       k i x  ⇒ Object' φ (Swap  k) i x
-  , ∀ i x. Object   φ (Swap k) i x ⇒ Object' φ (Swap' k) i x
-  , ∀ i x. SwapObjectOf φ k i x ⇒ SwapObject' φ (Swap' k) i x
+  , ∀ i x. ObjectOf     φ       k  i x ⇒ Object'     φ (Swap  k) i x
+  , ∀ i x. Object       φ (Swap k) i x ⇒ Object'     φ (Swap' k) i x
+  , ∀ i x. SwapObjectOf φ       k  i x ⇒ SwapObject' φ (Swap' k) i x
   )
   ⇒ a -| Swap  k φ n m |-> b  -- ^ A 'Swap k' morphism.
   → a -| Swap' k φ n m |-> b  -- ^ An equivalent morphism in 'Fix (SwapF k)'.
-fixed' Id         = In IdF
-fixed' (Emb m)    = In (EmbF m)
-fixed' (g `Of` f) = In (fixed' g `OfF` fixed' f)
+fixed' Id          = In IdF
+fixed' (Emb m)     = In (EmbF m)
+fixed' (g `Of`  f) = In (fixed' g `OfF` fixed' f)
 fixed' (f `Par` g) = In $ fixed' f `ParF` fixed' g
 fixed' (Mul pn pm pn' pm' f g) = In $ MulF pn pm pn' pm' (fixed' f) (fixed' g)
 fixed' (Ith     i f) = In $ IthF     i (fixed' f)
@@ -797,7 +800,54 @@ fixed' (Swap  i j) = In $ SwapF i j
 -- fixed' (Permute ) =
 
 
-{- | Convert a 'Swap\' k' morphism to a 'Swap k' morphism. -}
+{- | Coalgebra for converting a @Swap k@ morphism to a @Swap' k@ morphism. -}
+fixedCoalg ∷ ∀ φ k n m a b.
+  -- Both constraints can be satisfied wherever instances from Cat.Sized.Braided.Free.Instances are in scope.
+  ( ∀ j x. ObjectOf     φ k j x ⇒ Object'     φ (Swap k) j x
+  , ∀ i x. SwapObjectOf φ k i x ⇒ SwapObject' φ (Swap k) i x
+  )
+  ⇒ a -|          (Swap k)  φ n m |-> b
+  → a -| (SwapF k (Swap k)) φ n m |-> b
+fixedCoalg Id          = IdF
+fixedCoalg (Emb m)     = EmbF m
+fixedCoalg (g `Of`  f) = g `OfF` f
+fixedCoalg (f `Par` g) = f `ParF` g
+fixedCoalg (Mul pn pm pn' pm' f g) = MulF pn pm pn' pm' f g
+fixedCoalg (Ith     i f) = IthF     i f
+fixedCoalg (Ith' pn i f) = IthF' pn i f
+fixedCoalg Join   = JoinF
+fixedCoalg Split  = SplitF
+fixedCoalg Assoc  = AssocF
+fixedCoalg Sing   = SingF
+fixedCoalg Unsing = UnsingF
+fixedCoalg (Lift1   f) = Lift1F   f
+fixedCoalg (Bising  f) = BisingF  f
+fixedCoalg (Bisplit f) = BisplitF f
+fixedCoalg (Bijoin  f) = BijoinF  f
+fixedCoalg (Biassoc f) = BiassocF f
+fixedCoalg (Swap  i j) = SwapF i j
+-- fixedCoalg (Swap' ) =
+-- fixedCoalg (Permute ) =
+
+
+{- | Convert a @Swap k@ morphism to a @Swap' k@ morphism. -}
+fixed ∷ ∀ k φ n m a b.
+  ( -- ∀ i x. ObjectOf φ k i x ⇒ Object' φ (SwapF k (Swap k)) i x  -- Only this Constraint is necessary wherever instances from Cat.Sized.Braided.Free.Instances are in scope.
+    ∀ i x. ObjectOf φ       k  i x ⇒ Object' φ (Swap  k) i x
+  , ∀ i x. Object   φ (Swap k) i x ⇒ Object' φ (Swap' k) i x
+  , ∀ i x. SwapObjectOf   φ k  i x ⇒ SwapObject' φ (Swap k) i x
+  , HFunctorObj (SwapF k) φ (Swap k) (Swap' k)
+  )
+  ⇒ a -| Swap  k φ n m |-> b  -- ^ A @Swap k@ morphism.
+  → a -| Swap' k φ n m |-> b  -- ^ A @Fix (SwapF k)@ morphism.
+fixed = ana fixedCoalg
+
+
+
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @fixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Swap' k@ morphism to a @Swap k@ morphism. -}
 unfixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
   , ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Swap k) i x
@@ -827,10 +877,48 @@ unfixed' (In (SwapF i j)) = Swap i j
 -- unfixed' (In PermuteF) =
 
 
+{- | Algebra for converting a @Swap' k@ morphism to a @Swap k@ morphism. -}
+unfixedAlg ∷ ∀ k φ n m a b.
+    a -| SwapF k (Swap k) φ n m |-> b
+  → a -|         (Swap k) φ n m |-> b
+unfixedAlg IdF          = Id
+unfixedAlg (EmbF m)     = Emb m
+unfixedAlg (g `OfF`  f) = g `Of` f
+unfixedAlg (f `ParF` g) = f `Par` g
+unfixedAlg (MulF pn pm pn' pm' f g) = Mul pn pm pn' pm' f g
+unfixedAlg (IthF     i f) = Ith     i f
+unfixedAlg (IthF' pn i f) = Ith' pn i f
+unfixedAlg JoinF   = Join
+unfixedAlg SplitF  = Split
+unfixedAlg AssocF  = Assoc
+unfixedAlg SingF   = Sing
+unfixedAlg UnsingF = Unsing
+unfixedAlg (Lift1F   f) = Lift1   f
+unfixedAlg (BisingF  f) = Bising  f
+unfixedAlg (BisplitF f) = Bisplit f
+unfixedAlg (BijoinF  f) = Bijoin  f
+unfixedAlg (BiassocF f) = Biassoc f
+unfixedAlg (SwapF i j)  = Swap i j
+-- unfixedAlg (In SwapF') =
+-- unfixedAlg (In PermuteF) =
+
+
+{- | Convert a @Swap' k@ morphism to a @Swap k@ morphism. -}
+unfixed ∷ ∀ k φ n m a b.
+   -- Both constraints can be satisfied wherever instances from Cat.Sized.Braided.Free.Instances are in scope.
+  ( ∀ i x. Object     φ (Swap' k) i x ⇒ Object'     φ (Swap k) i x
+  , ∀ i x. SwapObject φ (Swap' k) i x ⇒ SwapObject' φ (Swap k) i x
+  )
+  ⇒ a -| Swap' k φ n m |-> b  -- ^ A @Swap' k@ morphism.
+  → a -| Swap  k φ n m |-> b  -- ^ An equivalent @Swap k@ morphism.
+unfixed = cata unfixedAlg
+
+
+
 
 -- TODO lift constraint that the Proxy be the same before and after/make an alternative version?
 {- | Given a function that maps primitive morphisms to morphisms in a target
-category /t/, this constructs an algebra for recursion schemes. -}
+category /t/, this constructs an algebra from the free category type. -}
 mkAlg ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type).
@@ -872,27 +960,27 @@ mkAlg _ (SwapF i j) = swap i j
 -- mkAlg _ PermuteF =
 
 
-
+{- | Alternative to 'foldMap' based on 'cata'. -}
 foldMap' ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (n ∷ Nat) (m ∷ Nat)
-  (a ∷ κ) (b ∷ κ).
+  (a ∷ κ)   (b ∷ κ).
   ( Braided φ t
-  , ProxyOf φ k ~ ProxyOf φ t, ProxyOf φ t ~ Proxy   φ t
+  , ProxyOf φ k ~ ProxyOf φ t, ProxyOf φ t ~ Proxy φ t
   , (∀ i x. Object φ (Fix (SwapF k)) i x ⇒ Object' φ t i x)
   , BraidedFunctor (SwapF k) φ (Fix (SwapF k)) t
   )
-  ⇒ (∀ i j x y. (
-                  ObjectOf φ k i x
-                , ObjectOf φ k j y
-                , Object   φ t i x
-                , Object   φ t j y
-                )
+  ⇒ (∀ i j x y.
+     ( ObjectOf φ k i x
+     , ObjectOf φ k j y
+     , Object   φ t i x
+     , Object   φ t j y
+     )
      ⇒ x -| k φ i j |-> y
      → x -| t φ i j |-> y
-     )                            -- ^ A function mapping primitives (/k/-morphisms) into the target category.
+     )                                 -- ^ A function mapping primitives (/k/-morphisms) into the target category.
   → (  a -| Fix (SwapF k) φ n m |-> b
-    →  a -|        t     φ n m |-> b
+    →  a -|        t      φ n m |-> b
     )
 foldMap' α = cata (mkAlg α)

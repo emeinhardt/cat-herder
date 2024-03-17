@@ -1,7 +1,5 @@
 = Current stack
 
-== Round out recursion scheme functionality
-
 == Finish tensors
 
 - instance SrN Monoidal...
@@ -32,27 +30,7 @@
  - Cat.Unsized.Semigroupoid.Free.Data
  - Cat.Unsized.Category.Free.Data
 
-2. Flesh out more basic recursion schemes functionality
-
-  - Converting between basic free category types and the fixpoint of their
-    pattern functors should be expressible in terms of `ana`/`cata`. Figure out
-    what needs to happen with constraints (or use of continuations +
-    existentially quantified sizes, or ...) to make this work correctly.
-      - Propagate what works for @Cat.Sized.Category.Free.Data@ to
-        @Cat.Sized.Monoidal.Free.Data@ + further upstream classes.
-
-  - More robust empirical tests:
-      - 'Cat.Sized.Examples.Circuit': can you convert boolean expressions
-        into/between normal forms?
-          - Do you need/want different types (and perhaps a different —
-            non-example — module altogether) for this?
-      - Either example: incremental computation and adjustable evaluation
-        traces expressed via folds?
-
-  - Refactor: Because of module coupling (currently manifesting as some instance
-    derivations), move '{Unsized/Sized}.HFunctor' into its own module.
-
-3. Bimonoidal
+2. Bimonoidal
  - Revisit Cat.Sized.Circuit with Cat.Sized.Cartesian.Free
    - Could you actually use Codiagonal ± Semicocartesian methods?
  - DistributiveLR instances
@@ -60,20 +38,33 @@
  - Maaaaybe Free Semiadditive (unless in the course of writing it you discover
    Free Additive would be a better use of time?)
 
-4. Sketch a profunctor-based typeclass hierarchy in a new branch when your
+3. Sketch a profunctor-based typeclass hierarchy in a new branch when your
    examples include biproducts and enough of the basic functionality with
    biproducts (e.g. recursion schemes) seems to be working.
 
-5. Feature integration / testing:
+4. Feature integration / testing:
   - Boolean circuits as tensors over a semiring
     - Consider a numhask reimplementation
-  - Recursion scheme over circuits/products of constant boolean morphisms for normal forms?
-  - Incremental computation?
+  - Recursion scheme over circuits/products of constant boolean morphisms for
+    normal forms?
+    - Do you need/want different types (and perhaps a different,
+      not-just-an-example module) for this?
+  - Incremental computation ± traces?
   - Check refs to see what you need to take a beeline to encoding SAT problems
     - Boolean relations
     - ((Self-dual?) compact) closed categories (/dagger categories?)
     - Traces
   - Zusatz: ersatz terms as a DSL.
+
+
+= Maintenance that might pay dividends
+
+- Refactor: Because of module coupling (currently manifesting with instance
+  derivations and obnoxious constraints), move '{Unsized/Sized}.HFunctor' into
+  a module separate from '_.Functor'.
+    - Expected payoff might increase with the volume/complexity of future code
+      that depends on recursion schemes.
+
 
 
 
@@ -85,6 +76,8 @@
   — "search"/"selection" that points to a first/last value satisfying a predicate (or a default)?
   - pointer/finitary representable store comonad
   - tangent bundle/finitary discrete derivative comonad
+
+== Infrastructure
 
 - repository CI / fix cachix setup
 

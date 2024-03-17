@@ -29,7 +29,7 @@ import Prelude hiding
   ( (.)
   , id
   )
-import Prelude.Unicode ((∘))
+-- import Prelude.Unicode ((∘))
 
 import Data.Kind (Type)
 
@@ -131,47 +131,52 @@ instance (Category k) ⇒ Profunctor k k (Endo k) where
 
 
 
--- TODO work out appropriate constraints: see Cat.Unsized.Functor
+-- TODO It's probably best for all of this to be obliterated and unified with
+-- the 'HFunctor' that's in 'Cat.Unsized.Functor' and defined/used wrt
+-- categories.
 
-{- | In the category of profunctors, profunctors are objects and natural
-transformations are morphisms; this type synonym roughly captures a natural
-transformation between two profunctors. -}
-type (p ∷ κ → κ' → Type) :~> (q ∷ κ → κ' → Type) =
-  ∀ (a ∷ κ) (b ∷ κ'). a `p` b → a `q` b
+-- If that's not what ends up working out/one way of figuring out if that's
+-- possible would be to work out appropriate constraints for methods below.
 
-
-{- | Profunctors form a category; instances of this typeclass are endofunctors in
-that category. Together with 'Fix', this permits the definition of recursion
-schemes over profunctors.
-
-See
-[Milewski, 2018. *Free monoidal profunctors*](https://bartoszmilewski.com/2018/02/20/free-monoidal-profunctors)
-for discussion somewhat specialized to endoprofunctors on @(->)@. -}
-class HPFunctor (η ∷ (κ → κ' → Type) → κ → κ' → Type) where
-
-  {- | @hpmap@ lifts a natural transformation from the profunctor @p@ to the
-  profunctor @q@. -}
-  hpmap ∷ (p :~> q) → (η p :~> η q)
-
-  {- | @hdimap@ shows that the result of the mapping defined by @η@ is also a
-  profunctor. -}
-  -- hdimap ∷ (Category l, Category r, Object l s, Object l a, Object r b, Object r t)
-  --        ⇒ (s `l` a) → (b `r` t) → η p a b → η p s t
-  hdimap ∷ (s `l` a) → (b `r` t) → η p a b → η p s t
-
-{- | The fixpoint of an endofunctor in the category of profunctors. -}
-newtype Fix (η ∷ (κ → κ' → Type) → κ → κ' → Type) (a ∷ κ) (b ∷ κ') =
-  In { out ∷ η (Fix η) a b }
-
-instance (Category l, Category r, HPFunctor η) ⇒ Profunctor l r (Fix η) where
-  dimap pre_ post_ (In η) = In (hdimap pre_ post_ η)
+-- {- | In the category of profunctors, profunctors are objects and natural
+-- transformations are morphisms; this type synonym roughly captures a natural
+-- transformation between two profunctors. -}
+-- type (p ∷ κ → κ' → Type) :~> (q ∷ κ → κ' → Type) =
+--   ∀ (a ∷ κ) (b ∷ κ'). a `p` b → a `q` b
 
 
-{- | A catamorphism in the category of profunctors. -}
-cata ∷ HPFunctor η ⇒ (η q :~> q) → Fix η a b → q a b
-cata alg = alg ∘ hpmap (cata alg) ∘ out
+-- {- | Profunctors form a category; instances of this typeclass are endofunctors in
+-- that category. Together with 'Fix', this permits the definition of recursion
+-- schemes over profunctors.
+
+-- See
+-- [Milewski, 2018. *Free monoidal profunctors*](https://bartoszmilewski.com/2018/02/20/free-monoidal-profunctors)
+-- for discussion somewhat specialized to endoprofunctors on @(->)@. -}
+-- class HPFunctor (η ∷ (κ → κ' → Type) → κ → κ' → Type) where
+
+--   {- | @hpmap@ lifts a natural transformation from the profunctor @p@ to the
+--   profunctor @q@. -}
+--   hpmap ∷ (p :~> q) → (η p :~> η q)
+
+--   {- | @hdimap@ shows that the result of the mapping defined by @η@ is also a
+--   profunctor. -}
+--   -- hdimap ∷ (Category l, Category r, Object l s, Object l a, Object r b, Object r t)
+--   --        ⇒ (s `l` a) → (b `r` t) → η p a b → η p s t
+--   hdimap ∷ (s `l` a) → (b `r` t) → η p a b → η p s t
+
+-- {- | The fixpoint of an endofunctor in the category of profunctors. -}
+-- newtype Fix (η ∷ (κ → κ' → Type) → κ → κ' → Type) (a ∷ κ) (b ∷ κ') =
+--   In { out ∷ η (Fix η) a b }
+
+-- instance (Category l, Category r, HPFunctor η) ⇒ Profunctor l r (Fix η) where
+--   dimap pre_ post_ (In η) = In (hdimap pre_ post_ η)
 
 
-{- | An anamorphism in the category of profunctors. -}
-ana ∷ HPFunctor η ⇒ (q :~> η q) → q a b → Fix η a b
-ana coalg = In ∘ hpmap (ana coalg) ∘ coalg
+-- {- | A catamorphism in the category of profunctors. -}
+-- cata ∷ HPFunctor η ⇒ (η q :~> q) → Fix η a b → q a b
+-- cata alg = alg ∘ hpmap (cata alg) ∘ out
+
+
+-- {- | An anamorphism in the category of profunctors. -}
+-- ana ∷ HPFunctor η ⇒ (q :~> η q) → q a b → Fix η a b
+-- ana coalg = In ∘ hpmap (ana coalg) ∘ coalg

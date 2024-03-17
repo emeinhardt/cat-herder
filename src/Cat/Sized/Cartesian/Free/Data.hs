@@ -81,10 +81,14 @@ module Cat.Sized.Cartesian.Free.Data
           )
   , Cart'
   , CartesianFunctor
-  , fixed'
-  , unfixed'
-  , mkAlg
   , foldMap'
+  , mkAlg
+  , fixed
+  , fixedCoalg
+  , fixed'
+  , unfixed
+  , unfixedAlg
+  , unfixed'
   ) where
 
 {- TODO
@@ -131,16 +135,14 @@ import Cat.Operators
   )
 
 import Cat.Sized.Functor
-  ( -- NT
-    NT'
+  ( NT'
   , HFunctor ( hfmap
              , HFunctorObj
              )
   , Fix ( In
-        , out
         )
   , cata
-  -- , ana
+  , ana
   )
 
 import Cat.Sized.Functor.Monoidal qualified as MF
@@ -1175,18 +1177,20 @@ instance HFunctor (CartF k) where
   hfmap α (ZipWithF f) = ZipWithF (α f)
 
 
--- TODO As with 'Cat._.Category.Free.Data', rewrite in terms of an
--- anamorphism/catamorphism ± sort out why that's more painful/awkward
-{- | Convert a 'Cart k' morphism to a 'Cart\' k' morphism. -}
+
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @fixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Cart k@ morphism to a @Cart' k@ morphism. -}
 fixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
-  , ∀ i x. ObjectOf φ       k  i x ⇒ Object' φ (Cart  k) i x
-  , ∀ i x. Object   φ (Cart k) i x ⇒ Object' φ (Cart' k) i x
-  , ∀ i   x.   SwapObjectOf   φ k i   x   ⇒ SwapObject'   φ (Cart' k) i   x
-  , ∀ i   x.   ProjObjectOf   φ k i   x   ⇒ ProjObject'   φ (Cart' k) i   x
-  , ∀ i   x.   DelObjectOf    φ k i   x   ⇒ DelObject'    φ (Cart' k) i   x
-  , ∀ i l x.   SelectObjectOf φ k i l x   ⇒ SelectObject' φ (Cart' k) i l x
-  , ∀ i j x y. DupObjectOf    φ k i j x y ⇒ DupObject'    φ (Cart' k) i j x y
+  , ∀ i   x.   ObjectOf       φ       k  i   x   ⇒ Object'       φ (Cart  k) i   x
+  , ∀ i   x.   Object         φ (Cart k) i   x   ⇒ Object'       φ (Cart' k) i   x
+  , ∀ i   x.   SwapObjectOf   φ       k  i   x   ⇒ SwapObject'   φ (Cart' k) i   x
+  , ∀ i   x.   ProjObjectOf   φ       k  i   x   ⇒ ProjObject'   φ (Cart' k) i   x
+  , ∀ i   x.   DelObjectOf    φ       k  i   x   ⇒ DelObject'    φ (Cart' k) i   x
+  , ∀ i l x.   SelectObjectOf φ       k  i l x   ⇒ SelectObject' φ (Cart' k) i l x
+  , ∀ i j x y. DupObjectOf    φ       k  i j x y ⇒ DupObject'    φ (Cart' k) i j x y
   )
   ⇒ a -| Cart  k φ n m |-> b  -- ^ A 'Cart k' morphism.
   → a -| Cart' k φ n m |-> b  -- ^ An equivalent 'Fix (CartF k)' morphism.
@@ -1221,11 +1225,74 @@ fixed'  Zip    = In $ ZipF
 fixed' (ZipWith  f) = In $ ZipWithF (fixed' f)
 
 
-{- | Convert a 'Cart\' k' morphism to a 'Cart k' morphism. -}
+{- | Coalgebra for converting a @Cart k@ morphism to a @Cart' k@ morphism. -}
+fixedCoalg ∷ ∀ φ k n m a b.
+  ( ∀ i   x.   ObjectOf       φ k i   x   ⇒ Object'       φ (Cart k) i   x
+  , ∀ i   x.   SwapObjectOf   φ k i   x   ⇒ SwapObject'   φ (Cart k) i   x
+  , ∀ i   x.   ProjObjectOf   φ k i   x   ⇒ ProjObject'   φ (Cart k) i   x
+  , ∀ i   x.   DelObjectOf    φ k i   x   ⇒ DelObject'    φ (Cart k) i   x
+  , ∀ i l x.   SelectObjectOf φ k i l x   ⇒ SelectObject' φ (Cart k) i l x
+  , ∀ i j x y. DupObjectOf    φ k i j x y ⇒ DupObject'    φ (Cart k) i j x y
+  )
+  ⇒ a -|          (Cart k)  φ n m |-> b
+  → a -| (CartF k (Cart k)) φ n m |-> b
+fixedCoalg Id          = IdF
+fixedCoalg (Emb m)     = EmbF m
+fixedCoalg (g `Of`  f) = g `OfF` f
+fixedCoalg (f `Par` g) = f `ParF` g
+fixedCoalg (Mul pn pm pn' pm' f g) = MulF pn pm pn' pm' f g
+fixedCoalg (Ith     i f) = IthF     i f
+fixedCoalg (Ith' pn i f) = IthF' pn i f
+fixedCoalg Join   = JoinF
+fixedCoalg Split  = SplitF
+fixedCoalg Assoc  = AssocF
+fixedCoalg Sing   = SingF
+fixedCoalg Unsing = UnsingF
+fixedCoalg (Lift1   f) = Lift1F   f
+fixedCoalg (Bising  f) = BisingF  f
+fixedCoalg (Bisplit f) = BisplitF f
+fixedCoalg (Bijoin  f) = BijoinF  f
+fixedCoalg (Biassoc f) = BiassocF f
+fixedCoalg (Swap  i j) = SwapF i j
+-- fixedCoalg (Swap' ) =
+-- fixedCoalg (Permute ) =
+fixedCoalg  Dup        = DupF
+fixedCoalg (Dup'  n s) = DupF' n s
+fixedCoalg (Fork        f g) = ForkF        f g
+fixedCoalg (Fork' l n m f g) = ForkF' l n m f g
+fixedCoalg (Idx i) = IdxF i
+fixedCoalg (Del i) = DelF i
+fixedCoalg (Sel i) = SelF i
+fixedCoalg  Zip    = ZipF
+fixedCoalg (ZipWith  f) = ZipWithF f
+
+
+
+{- | Convert a @Cart k@ morphism to a @Cart' k@ morphism. -}
+fixed ∷ ∀ k φ n m a b.
+  ( ∀ i   x.   ObjectOf       φ       k  i   x   ⇒ Object'       φ (Cart  k) i   x
+  , ∀ i   x.   Object         φ (Cart k) i   x   ⇒ Object'       φ (Cart' k) i   x
+  , ∀ i   x.   SwapObjectOf   φ       k  i   x   ⇒ SwapObject'   φ (Cart  k) i   x
+  , ∀ i   x.   ProjObjectOf   φ       k  i   x   ⇒ ProjObject'   φ (Cart  k) i   x
+  , ∀ i   x.   DelObjectOf    φ       k  i   x   ⇒ DelObject'    φ (Cart  k) i   x
+  , ∀ i l x.   SelectObjectOf φ       k  i l x   ⇒ SelectObject' φ (Cart  k) i l x
+  , ∀ i j x y. DupObjectOf    φ       k  i j x y ⇒ DupObject'    φ (Cart  k) i j x y
+  , HFunctorObj (CartF k) φ (Cart k) (Cart' k)
+  )
+  ⇒ a -| Cart  k φ n m |-> b  -- ^ A @Cart k@ morphism.
+  → a -| Cart' k φ n m |-> b  -- ^ A @Fix (CartF k)@ morphism.
+fixed = ana fixedCoalg
+
+
+
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @fixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Cart' k@ morphism to a @Cart k@ morphism. -}
 unfixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
-  , ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Cart k) i x
-  , ∀ i x. Object φ (Cart k) i x ⇒ Object' φ (Cart' k) i x
+  , ∀ i x. ObjectOf φ       k  i x ⇒ Object' φ (Cart  k) i x
+  , ∀ i x. Object   φ (Cart k) i x ⇒ Object' φ (Cart' k) i x
   )
   ⇒ a -| Cart' k φ n m |-> b  -- ^ A 'Fix (CartF k)' morphism.
   → a -| Cart  k φ n m |-> b  -- ^ An equivalent 'Cart k' morphism.
@@ -1260,10 +1327,60 @@ unfixed' (In  ZipF  )  = Zip
 unfixed' (In (ZipWithF f)) = ZipWith (unfixed' f)
 
 
+{- | Algebra for converting a @Cart' k@ morphism to a @Cart k@ morphism. -}
+unfixedAlg ∷ ∀ k φ n m a b.
+    a -| CartF k (Cart k) φ n m |-> b
+  → a -|         (Cart k) φ n m |-> b
+unfixedAlg IdF          = Id
+unfixedAlg (EmbF m)     = Emb m
+unfixedAlg (g `OfF`  f) = g `Of` f
+unfixedAlg (f `ParF` g) = f `Par` g
+unfixedAlg (MulF pn pm pn' pm' f g) = Mul pn pm pn' pm' f g
+unfixedAlg (IthF     i f) = Ith     i f
+unfixedAlg (IthF' pn i f) = Ith' pn i f
+unfixedAlg JoinF   = Join
+unfixedAlg SplitF  = Split
+unfixedAlg AssocF  = Assoc
+unfixedAlg SingF   = Sing
+unfixedAlg UnsingF = Unsing
+unfixedAlg (Lift1F   f) = Lift1   f
+unfixedAlg (BisingF  f) = Bising  f
+unfixedAlg (BisplitF f) = Bisplit f
+unfixedAlg (BijoinF  f) = Bijoin  f
+unfixedAlg (BiassocF f) = Biassoc f
+unfixedAlg (SwapF i j)  = Swap i j
+-- unfixedAlg (In SwapF') =
+-- unfixedAlg (In PermuteF) =
+unfixedAlg DupF       = Dup
+unfixedAlg (DupF' n s) = Dup' n s
+unfixedAlg (ForkF        f g) = Fork        f g
+unfixedAlg (ForkF' l n m f g) = Fork' l n m f g
+unfixedAlg (IdxF i) = Idx i
+unfixedAlg (DelF i) = Del i
+unfixedAlg (SelF i) = Sel i
+unfixedAlg ZipF     = Zip
+unfixedAlg (ZipWithF f) = ZipWith f
+
+
+
+{- | Convert a @Cart' k@ morphism to a @Cart k@ morphism. -}
+unfixed ∷ ∀ k φ n m a b.
+  ( ∀ i   x.   Object         φ (Cart' k) i   x   ⇒ Object'       φ (Cart k) i   x
+  , ∀ i   x.   SwapObject     φ (Cart' k) i   x   ⇒ SwapObject'   φ (Cart k) i   x
+  , ∀ i   x.   ProjObject     φ (Cart' k) i   x   ⇒ ProjObject'   φ (Cart k) i   x
+  , ∀ i   x.   DelObject      φ (Cart' k) i   x   ⇒ DelObject'    φ (Cart k) i   x
+  , ∀ i l x.   SelectObject   φ (Cart' k) i l x   ⇒ SelectObject' φ (Cart k) i l x
+  , ∀ i j x y. DupObject      φ (Cart' k) i j x y ⇒ DupObject'    φ (Cart k) i j x y
+  )
+  ⇒ a -| Cart' k φ n m |-> b  -- ^ A @Cart' k@ morphism.
+  → a -| Cart  k φ n m |-> b  -- ^ An equivalent @Cart k@ morphism.
+unfixed = cata unfixedAlg
+
+
 
 -- TODO lift constraint that the Proxy be the same before and after/make an alternative version?
 {- | Given a function that maps primitive morphisms to morphisms in a target
-category /t/, this constructs an algebra for recursion schemes. -}
+category /t/, this constructs an algebra from the free category type. -}
 mkAlg ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type).

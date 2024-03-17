@@ -19,8 +19,8 @@ module Cat.Sized.Category.Free.Data
          , OfF
          )
   , Cat'
-  , mkAlg
   , foldMap'
+  , mkAlg
   , fixed
   , fixedCoalg
   , fixed'
@@ -199,7 +199,7 @@ instance HFunctor (CatF k) where
 
 
 {- | Given a function that maps primitive morphisms to morphisms in a target
-category /t/, this constructs an algebra for recursion schemes. -}
+category /t/, this constructs an algebra from the free category type. -}
 mkAlg ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type).
@@ -222,15 +222,16 @@ mkAlg _ (g `OfF` f)      = g . f
 mkAlg α (EmbF    f)      = α f
 
 
+{- | Alternative to 'foldMap' based on 'cata'. -}
 foldMap' ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (n ∷ Nat) (m ∷ Nat)
-  (a ∷ κ) (b ∷ κ).
+  (a ∷ κ)   (b ∷ κ).
   ( Category φ t
   -- , Object φ (Fix (CatF k)) n a
   -- , Object φ (Fix (CatF k)) m b
-  , (∀ i x. Object φ (Fix (CatF k)) i x ⇒ Object' φ  t      i x)
+  , (∀ i x. Object φ (Fix (CatF k)) i x ⇒ Object' φ t i x)
   )
   ⇒ (∀ i j x y.
      ( ObjectOf φ k i x
@@ -240,7 +241,7 @@ foldMap' ∷ ∀ κ (φ ∷ Nat → κ → κ)
      )
      ⇒ x -| k φ i j |-> y
      → x -| t φ i j |-> y
-     )                            -- ^ A function mapping primitives (/k/-morphisms) into the target category.
+     )                                -- ^ A function mapping primitives (/k/-morphisms) into the target category.
   → (  a -| Fix (CatF k) φ n m |-> b
     →  a -|        t     φ n m |-> b
     )
@@ -265,7 +266,7 @@ fixed' (g `Of` f) = In (fixed' g `OfF` fixed' f)
 
 {- | Coalgebra for converting a @Cat k@ morphism to a @Cat' k@ morphism. -}
 fixedCoalg ∷ ∀ φ k n m a b.
-  ( ∀ j x. ObjectOf φ k j x ⇒ Object' φ (Cat k) j x)  -- Constraint can be eliminated wherever instances from Cat.Sized.Category.Free.Instances are available.
+  ( ∀ j x. ObjectOf φ k j x ⇒ Object' φ (Cat k) j x)  -- Constraint can be satisfied wherever instances from Cat.Sized.Category.Free.Instances are in scope.
   ⇒ a -|         (Cat k)  φ n m |-> b
   → a -| (CatF k (Cat k)) φ n m |-> b
 fixedCoalg Id         = IdF
@@ -275,7 +276,7 @@ fixedCoalg (g `Of` f) = g `OfF` f
 
 {- | Convert a @Cat k@ morphism to a @Cat' k@ morphism. -}
 fixed ∷ ∀ k φ n m a b.
-  ( -- ∀ i x. ObjectOf φ k i x ⇒ Object' φ (CatF k (Cat k)) i x  -- Only this Constraint is necessary wherever instances from Cat.Sized.Category.Free.Instances are available.
+  ( -- ∀ i x. ObjectOf φ k i x ⇒ Object' φ (CatF k (Cat k)) i x  -- Only this Constraint is necessary wherever instances from Cat.Sized.Category.Free.Instances are in scope.
     ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Cat k) i x
   , ∀ i x. Object φ (Cat k) i x ⇒ Object' φ (Cat' k) i x
   , HFunctorObj (CatF k) φ (Cat k) (Cat' k)
@@ -312,7 +313,7 @@ unfixedAlg (EmbF m)    = Emb m
 
 {- | Convert a @Cat' k@ morphism to a @Cat k@ morphism. -}
 unfixed ∷ ∀ k φ n m a b.
-  (∀ i x. Object φ (Cat' k) i x ⇒ Object' φ (Cat k) i x)  -- Constraint can be eliminated wherever instances from Cat.Sized.Category.Free.Instances are available.
+  (∀ i x. Object φ (Cat' k) i x ⇒ Object' φ (Cat k) i x)  -- Constraint can be satisfied wherever instances from Cat.Sized.Category.Free.Instances are in scope.
   ⇒ a -| Cat' k φ n m |-> b  -- ^ A @Cat' k@ morphism.
   → a -| Cat  k φ n m |-> b  -- ^ An equivalent @Cat k@ morphism.
 unfixed = cata unfixedAlg

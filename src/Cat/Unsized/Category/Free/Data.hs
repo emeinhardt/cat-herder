@@ -166,7 +166,7 @@ unfixedAlg (EmbF m)    = Emb m
 
 {- | Convert a @Cat' k@ morphism to a @Cat k@ morphism. -}
 unfixed ∷ ∀ k a b.
-  (∀ x. Object (Cat' k) x ⇒ Object' (Cat k) x)  -- Constraint can be eliminated wherever instances from Cat.Sized.Category.Free.Instances are available.
+  (∀ x. Object (Cat' k) x ⇒ Object' (Cat k) x)  -- Constraint can be satisfied wherever instances from Cat.Sized.Category.Free.Instances are in scope.
   ⇒ a -| Cat' k |-> b  -- ^ A @Cat' k@ morphism.
   → a -| Cat  k |-> b  -- ^ An equivalent @Cat k@ morphism.
 unfixed = cata unfixedAlg
@@ -213,7 +213,7 @@ instance HFunctor (CatF k) where
 
 
 {- | Given a function that maps primitive morphisms to morphisms in a target
-category /t/, this constructs an algebra for recursion schemes. -}
+category /t/, this constructs an algebra from the free category type. -}
 mkAlg ∷ ∀ κ (k ∷ κ → κ → Type) (t ∷ κ → κ → Type).
   (Category t)
   ⇒ (∀ a b. ( ObjectOf k a, Object   t a
@@ -228,16 +228,17 @@ mkAlg _ (g `OfF` f) = g . f
 mkAlg α (EmbF    f) = α f
 
 
-{- | Alternative to @foldMap'@ based on 'cata'. -}
+{- | Alternative to 'foldMap' based on 'cata'. -}
 foldMap' ∷ ∀ κ (k ∷ κ → κ → Type) (t ∷ κ → κ → Type) (a ∷ κ) (b ∷ κ).
   ( Category t
   -- , Object (Fix (CatF k)) a
   -- , Object (Fix (CatF k)) b
-  , (∀ x. Object (Fix (CatF k)) x ⇒ Object'    t        x)
+  , (∀ x. Object (Fix (CatF k)) x ⇒ Object' t x)
   )
-  ⇒ (∀ x y. ( ObjectOf k x, Object   t x
-            , ObjectOf k y, Object   t y
-            )
+  ⇒ (∀ x y.
+     ( ObjectOf k x, Object t x
+     , ObjectOf k y, Object t y
+     )
      ⇒ x `k` y
      → x `t` y
      )                         -- ^ A function mapping primitive morphisms into the target category.

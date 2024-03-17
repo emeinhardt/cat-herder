@@ -48,10 +48,14 @@ module Cat.Sized.Monoidal.Free.Data
          , BiassocF
          )
   , Mon'
-  , fixed'
-  , unfixed'
-  , mkAlg
   , foldMap'
+  , mkAlg
+  , fixed
+  , fixedCoalg
+  , fixed'
+  , unfixed
+  , unfixedAlg
+  , unfixed'
   ) where
 
 import Prelude hiding
@@ -81,9 +85,9 @@ import Cat.Operators
   )
 
 import Cat.Sized.Functor
-  ( NT
-  , NT'
+  ( NT'
   , HFunctor ( hfmap
+             , HFunctorObj
              )
   , Fix ( In
         , out
@@ -830,9 +834,10 @@ instance (Monoidal φ (η (Fix η))) ⇒ Monoidal φ (Fix η) where
 
 
 
--- TODO As with 'Cat._.Category.Free.Data', rewrite in terms of an
--- anamorphism/catamorphism ± sort out why that's more painful/awkward
-{- | Convert a 'Mon k' morphism to a 'Mon\' k' morphism. -}
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @fixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Mon k@ morphism to a @Mon' k@ morphism. -}
 fixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
   , ∀ i x. ObjectOf φ      k  i x ⇒ Object' φ (Mon  k) i x
@@ -840,9 +845,9 @@ fixed' ∷ ∀ k φ n m a b.
   )
   ⇒ a -| Mon  k φ n m |-> b
   → a -| Mon' k φ n m |-> b
-fixed' Id         = In IdF
-fixed' (Emb m)    = In (EmbF m)
-fixed' (g `Of` f) = In (fixed' g `OfF` fixed' f)
+fixed' Id          = In IdF
+fixed' (Emb m)     = In (EmbF m)
+fixed' (g `Of` f)  = In (fixed' g `OfF` fixed' f)
 fixed' (f `Par` g) = In $ fixed' f `ParF` fixed' g
 fixed' (Mul pn pm pn' pm' f g) = In $ MulF pn pm pn' pm' (fixed' f) (fixed' g)
 fixed' (Ith     i f) = In $ IthF     i (fixed' f)
@@ -859,11 +864,50 @@ fixed' (Bijoin  f) = In $ BijoinF  (fixed' f)
 fixed' (Biassoc f) = In $ BiassocF (fixed' f)
 
 
-{- | Convert a 'Mon\' k' morphism to a 'Mon k' morphism. -}
+{- | Coalgebra for converting a @Mon k@ morphism to a @Mon' k@ morphism. -}
+fixedCoalg ∷ ∀ φ k n m a b.
+  ( ∀ j x. ObjectOf φ k j x ⇒ Object' φ (Mon k) j x)  -- Constraint can be satisfied wherever instances from Cat.Sized.Monoidal.Free.Instances are in scope.
+  ⇒ a -|         (Mon k)  φ n m |-> b
+  → a -| (MonF k (Mon k)) φ n m |-> b
+fixedCoalg Id          = IdF
+fixedCoalg (Emb m)     = EmbF m
+fixedCoalg (g `Of`  f) = g `OfF` f
+fixedCoalg (f `Par` g) = f `ParF` g
+fixedCoalg (Mul pn pm pn' pm' f g) = MulF pn pm pn' pm' f g
+fixedCoalg (Ith     i f) = IthF     i f
+fixedCoalg (Ith' pn i f) = IthF' pn i f
+fixedCoalg Join   = JoinF
+fixedCoalg Split  = SplitF
+fixedCoalg Assoc  = AssocF
+fixedCoalg Sing   = SingF
+fixedCoalg Unsing = UnsingF
+fixedCoalg (Lift1   f) = Lift1F   f
+fixedCoalg (Bising  f) = BisingF  f
+fixedCoalg (Bisplit f) = BisplitF f
+fixedCoalg (Bijoin  f) = BijoinF  f
+fixedCoalg (Biassoc f) = BiassocF f
+
+
+{- | Convert a @Mon k@ morphism to a @Mon' k@ morphism. -}
+fixed ∷ ∀ k φ n m a b.
+  ( -- ∀ i x. ObjectOf φ k i x ⇒ Object' φ (MonF k (Mon k)) i x  -- Only this Constraint is necessary wherever instances from Cat.Sized.Monoidal.Free.Instances are in scope.
+    ∀ i x. ObjectOf φ      k  i x ⇒ Object' φ (Mon  k) i x
+  , ∀ i x. Object   φ (Mon k) i x ⇒ Object' φ (Mon' k) i x
+  , HFunctorObj (MonF k) φ (Mon k) (Mon' k)
+  )
+  ⇒ a -| Mon  k φ n m |-> b  -- ^ A @Mon k@ morphism.
+  → a -| Mon' k φ n m |-> b  -- ^ A @Fix (MonF k)@ morphism.
+fixed = ana fixedCoalg
+
+
+-- Keep this around as long as the dust hasn't settled around recursion schemes
+-- and coupling of object constraints between primitives and free objects:
+-- unlike @fixed@ this is independent of the recursion schemes implementation.
+{- | Convert a @Mon' k@ morphism to a @Mon k@ morphism. -}
 unfixed' ∷ ∀ k φ n m a b.
   ( ObjectOf φ k n a, ObjectOf φ k m b
-  , ∀ i x. ObjectOf φ k i x ⇒ Object' φ (Mon k) i x
-  , ∀ i x. Object φ (Mon k) i x ⇒ Object' φ (Mon' k) i x
+  , ∀ i x. ObjectOf φ      k  i x ⇒ Object' φ (Mon  k) i x
+  , ∀ i x. Object   φ (Mon k) i x ⇒ Object' φ (Mon' k) i x
   )
   ⇒ a -| Mon' k φ n m |-> b
   → a -| Mon  k φ n m |-> b
@@ -886,9 +930,40 @@ unfixed' (In (BijoinF  f)) = Bijoin  (unfixed' f)
 unfixed' (In (BiassocF f)) = Biassoc (unfixed' f)
 
 
+{- | Algebra for converting a @Mon' k@ morphism to a @Mon k@ morphism. -}
+unfixedAlg ∷ ∀ k φ n m a b.
+    a -| MonF k (Mon k) φ n m |-> b
+  → a -|        (Mon k) φ n m |-> b
+unfixedAlg IdF          = Id
+unfixedAlg (EmbF m)     = Emb m
+unfixedAlg (g `OfF`  f) = g `Of` f
+unfixedAlg (f `ParF` g) = f `Par` g
+unfixedAlg (MulF pn pm pn' pm' f g) = Mul pn pm pn' pm' f g
+unfixedAlg (IthF     i f) = Ith     i f
+unfixedAlg (IthF' pn i f) = Ith' pn i f
+unfixedAlg JoinF   = Join
+unfixedAlg SplitF  = Split
+unfixedAlg AssocF  = Assoc
+unfixedAlg SingF   = Sing
+unfixedAlg UnsingF = Unsing
+unfixedAlg (Lift1F   f) = Lift1   f
+unfixedAlg (BisingF  f) = Bising  f
+unfixedAlg (BisplitF f) = Bisplit f
+unfixedAlg (BijoinF  f) = Bijoin  f
+unfixedAlg (BiassocF f) = Biassoc f
+
+
+{- | Convert a @Mon' k@ morphism to a @Mon k@ morphism. -}
+unfixed ∷ ∀ k φ n m a b.
+  (∀ i x. Object φ (Mon' k) i x ⇒ Object' φ (Mon k) i x)  -- Constraint can be satisfied wherever instances from Cat.Sized.Monoidal.Free.Instances are in scope.
+  ⇒ a -| Mon' k φ n m |-> b  -- ^ A @Mon' k@ morphism.
+  → a -| Mon  k φ n m |-> b  -- ^ An equivalent @Mon k@ morphism.
+unfixed = cata unfixedAlg
+
+
 -- TODO lift constraint that the Proxy be the same before and after/make an alternative version?
 {- | Given a function that maps primitive morphisms to morphisms in a target
-category /t/, this constructs an algebra for recursion schemes. -}
+category /t/, this constructs an algebra from the free category type. -}
 mkAlg ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type).
@@ -896,18 +971,17 @@ mkAlg ∷ ∀ κ (φ ∷ Nat → κ → κ)
   , ProxyOf φ k ~ ProxyOf φ t, ProxyOf φ t ~ Proxy   φ t
   -- ∀ x. ObjectOf k x ⇒ Object' t x
   )
-  ⇒ (∀ n m a b. (
-              -- ∀ x. ObjectOf k x ⇒ Object' t x
-              ObjectOf φ k n a
-            , ObjectOf φ k m b
-            , Object   φ t n a
-            , Object   φ t m b
-            )
+  ⇒ (∀ n m a b.
+     ( -- ∀ x. ObjectOf k x ⇒ Object' t x
+       ObjectOf φ k n a
+     , ObjectOf φ k m b
+     , Object   φ t n a
+     , Object   φ t m b
+     )
      ⇒ a -| k φ n m |-> b
      → a -| t φ n m |-> b
      )
-  → NT' φ (MonF k t) t -- NatR
-  -- → (MonF k) t :~> t
+  → NT' φ (MonF k t) t
 mkAlg _ (IdF @k_ @t_ @a) = id @κ @φ @t
 mkAlg _ (g `OfF` f)      = g ⊙ f
 mkAlg α (EmbF    f)      = α f
@@ -927,23 +1001,24 @@ mkAlg _ (BijoinF  f) = bijoin  f
 mkAlg _ (BiassocF f) = biassoc f
 
 
+{- | Alternative to 'foldMap' based on 'cata'. -}
 foldMap' ∷ ∀ κ (φ ∷ Nat → κ → κ)
   (k ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (t ∷ (Nat → κ → κ) → Nat → Nat → κ → κ → Type)
   (n ∷ Nat) (m ∷ Nat)
-  (a ∷ κ) (b ∷ κ).
+  (a ∷ κ)   (b ∷ κ).
   ( Monoidal φ t
-  , ProxyOf φ k ~ ProxyOf φ t, ProxyOf φ t ~ Proxy   φ t
-  , Object φ (Fix (MonF k)) n a
-  , Object φ (Fix (MonF k)) m b
+  , ProxyOf φ k ~ ProxyOf φ t, ProxyOf φ t ~ Proxy φ t
+  -- , Object φ (Fix (MonF k)) n a
+  -- , Object φ (Fix (MonF k)) m b
   , (∀ i x. Object φ (Fix (MonF k)) i x ⇒ Object' φ t i x)
   )
-  ⇒ (∀ i j x y. (
-              ObjectOf φ k i x
-            , ObjectOf φ k j y
-            , Object   φ t i x
-            , Object   φ t j y
-            )
+  ⇒ (∀ i j x y.
+     ( ObjectOf φ k i x
+     , ObjectOf φ k j y
+     , Object   φ t i x
+     , Object   φ t j y
+     )
      ⇒ x -| k φ i j |-> y
      → x -| t φ i j |-> y
      )

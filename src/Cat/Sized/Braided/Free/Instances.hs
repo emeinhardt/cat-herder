@@ -8,7 +8,6 @@ module Cat.Sized.Braided.Free.Instances
   ) where
 
 import Prelude.Unicode ((∘))
-import Data.Composition ((.:))
 
 import Data.Kind    (Type)
 import GHC.TypeNats (Nat)
@@ -76,9 +75,7 @@ import Cat.Sized.Braided.Free.Data
          , Id
          , Of
          )
-  , BraidedFunctor
-  , SwapF ( EmbF
-          , IdF
+  , SwapF ( IdF
           , OfF
           , ParF
           , MulF

@@ -154,6 +154,8 @@ module Cat.Sized.Examples.Circuit
   , FreeCircuit'
   , FreeCircuitF
   , evalFreeCircuit'
+  , evalFreeCircuitUnfixed'
+  , evalFreeCircuitFixed
   , impliesBin'
   , impliesElem'
   , implies'
@@ -210,7 +212,8 @@ import Control.Arrow
   , (<<<)
   )
 import Data.Bifunctor
-  (bimap)
+  ( bimap
+  )
 import Data.Functor  qualified as F
 
 import Data.Kind
@@ -242,6 +245,10 @@ import Cat.Sized.Functor
   , cata
   )
 
+
+-- Imports in this example module are intentionally more granular than in the
+-- 'Arith' ones to facilitate finding definitions.
+
 import Cat.Sized.Functor.Monoidal
   ( zip
   , zipWith
@@ -249,12 +256,12 @@ import Cat.Sized.Functor.Monoidal
 
 import Cat.Sized.Semigroupoid.Class
   ( (.)
+  , Object
   , Sized ( Sized )
   , unSized
   )
 import Cat.Sized.Category.Class
   ( id
-  , Object
   )
 import Cat.Sized.Monoidal.Class
   ( (***)
@@ -293,14 +300,13 @@ import Cat.Sized.Cartesian.Free.Data
   , HasProj
   , HasDup 
   , HasSwap
-  -- , fixed'
-  -- , unfixed'
-  -- , CartF
   , Cart'
   , mkAlg
   , CartF ( EmbF
           , IdF
           )
+  , fixed
+  , unfixed
   )
 
 import Cat.Sized.Cartesian.Free.Instances ()
@@ -2009,3 +2015,40 @@ entails membership in /q/:
 -}
 implies' ∷ ∀ φ n. (KnownNat n) ⇒ φ n Bool -| FreeCircuit' φ 2 1 |-> Bool
 implies' = In (EmbF And) . impliesElem'
+
+
+
+{- | Evaluate @FreeCircuit'@ morphisms by first converting them via a catamorphism
+('unfixed') to @FreeCircuit@ morphisms.
+
+>>> (unSized $ evalFreeCircuitUnfixed' $ impliesBin') (fromJust $ VS.fromList @2 [True, True])
+Vector [True]
+>>> pq = fromJust $ VS.fromList @2 [(fromJust $ VS.fromList @3 [True, False, False]), (fromJust $ VS.fromList @3 [False, True, True])]
+pq :: VS.Vector 2 (VS.Vector 3 Bool)
+>>> (unSized $ evalFreeCircuitUnfixed' $ implies') pq
+Vector [False]
+-}
+evalFreeCircuitUnfixed' ∷ ∀ n m a b.
+  ( Object VS.Vector FreeCircuit' n a
+  , Object VS.Vector FreeCircuit' m b
+  )
+  ⇒ a -| FreeCircuit' VS.Vector n m |-> b
+  → a -| (Sized (->)) VS.Vector n m |-> b
+evalFreeCircuitUnfixed' = eval <<< unfixed
+
+
+
+{- | Evaluate @FreeCircuit@ morphisms by first converting them via an anamorphism
+('fixed') to @FreeCircuit'@ morphisms.
+
+>>> (unSized $ evalFreeCircuitFixed $ impliesBin) (fromJust $ VS.fromList @2 [True, True])
+Vector [True]
+>>> pq = fromJust $ VS.fromList @2 [(fromJust $ VS.fromList @3 [True, False, False]), (fromJust $ VS.fromList @3 [False, True, True])]
+pq :: VS.Vector 2 (VS.Vector 3 Bool)
+>>> (unSized $ evalFreeCircuitFixed $ implies) pq
+Vector [False]
+-}
+evalFreeCircuitFixed ∷ ∀ n m a b.
+    a -| FreeCircuit  VS.Vector n m |-> b
+  → a -| (Sized (->)) VS.Vector n m |-> b
+evalFreeCircuitFixed = evalFreeCircuit' <<< fixed

@@ -1219,8 +1219,7 @@ __Current status:__
    unable to change the product functor right now) into an instance of the
    associated category class. 
  - Basic recursion schemes (`cata`, `ana`) suitable for use with categories (via
-   an `HFunctor` class, etc.) are defined for free category types, but there are
-   some missing features or rough edges.
+   an `HFunctor` class, etc.) are defined for free category types.
  - There are typeclasses and instances for lifting existing and familiar
    typeclass instances into the package — mostly just for the category `->`.
  - To support evaluation and testing/development, there are two main product
@@ -1228,22 +1227,19 @@ __Current status:__
    that have instances for most of the `cat-herder` hierarchy.
 
 
- 1. __Recursion schemes__. Round out and test combinators for recursion schemes
-    over pattern functors for the various free `Monoidal` types. More recursion
-    schemes, as other needs dictate.
- 2. __GraphViz__. Functionality for generating graphviz diagrams of free paths
+ 1. __GraphViz__. Functionality for generating graphviz diagrams of free paths
     (DSL terms) like that available in `concat`.
- 3. __Simpler API__. Simplify typeclass constraints; move concrete instances
+ 2. __Simpler API__. Simplify typeclass constraints; move concrete instances
     with dependencies outside of base into separate modules (and eventually
     separate packages); eliminate kind polymorphism from most typeclasses;
     consider `numhask-array` for tensors over a semiring instead of/in addition
     to `orthotope`.
- 4. __Haddock readability__. A tweaked Haddock CSS file that makes large
+ 3. __Haddock readability__. A tweaked Haddock CSS file that makes large
     constraints much easier to read.
- 5. __Trees that Grow__. Free category types should have (or have variants with)
+ 4. __Trees that Grow__. Free category types should have (or have variants with)
     phase-indexed annotation slots
     (["trees that grow"](https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/trees-that-grow-guidance)).
- 6. __Type-aligned lists__. Add instances for a cons-list-like structure for
+ 5. __Type-aligned lists__. Add instances for a cons-list-like structure for
     free paths and then generalize the `Semigroupoid`/`Category`/`Monoidal`
     interface to that of type-aligned sequences, as described in
     [the type-aligned package](https://hackage.haskell.org/package/type-aligned)
@@ -1253,7 +1249,7 @@ __Current status:__
     implementation corresponds to "type-aligned lists modeled as binary trees".)
     I suspect this may interact poorly with one or both of constraints and
     type-level size annotations.
- 7. __Unsized hierarchy__. Fill out the "unsized" hierarchy: sometimes
+ 6. __Unsized hierarchy__. Fill out the "unsized" hierarchy: sometimes
     type-level cardinalities etc. present unacceptable trade-offs. This makes
     more sense to focus on /after/ it's clear what API is sufficient for 'sized'
     product functors.
