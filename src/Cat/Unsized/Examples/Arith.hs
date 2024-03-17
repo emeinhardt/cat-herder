@@ -52,6 +52,8 @@ import Cat.Unsized.Category.Free.Data
          )
   , Cat'
   , mkAlg
+  , fixed
+  , unfixed
   )
 
 import Cat.Unsized.Category.Instances ()
@@ -83,7 +85,7 @@ type FreeArith = Cat ArithFunc
 
 
 -- | ≈ @id@
-noOp ∷ ( ObjectOf ArithFunc a )
+noOp ∷ ( Object FreeArith a )
   ⇒ FreeArith a a
 noOp = Id
 
@@ -145,13 +147,8 @@ it :: Bool
 it :: Int
 -}
 evalFreeArith ∷ ∀ a b.
-              ( -- Any of the next three pairs of constraints suffice:
-                ArithPrim a
-              , ArithPrim b
-              --   ObjectOf ArithFunc a
-              -- , ObjectOf ArithFunc b
-              --   Object FreeArith a
-              -- , Object FreeArith b
+              ( Object FreeArith a
+              , Object FreeArith b
               )
               ⇒ FreeArith a b
               → (a → b)
@@ -171,7 +168,7 @@ type FreeArithF = CatF ArithFunc
 
 
 -- | ≈ @id@
-noOp' ∷ ( ObjectOf ArithFunc a )
+noOp' ∷ ( Object FreeArith' a )
   ⇒ FreeArith' a a
 noOp' = In IdF
 
@@ -226,3 +223,40 @@ evalFreeArith' ∷ ∀ a b.
   ⇒ FreeArith' a b
   → (a → b)
 evalFreeArith' = cata $ mkAlg evalArithPrim
+
+
+{- | Evaluate @FreeArith'@ morphisms by first converting them via a catamorphism
+('unfixed') to @FreeArith@ morphisms.
+
+>>> :t evalFreeArithUnfixed' $ In $ EmbF $ Lit True
+evalFreeArithUnfixed' $ In $ EmbF $ Lit True :: () -> Bool
+>>> (evalFreeArithUnfixed' (In $ EmbF $ Lit True)) $ ()
+True
+>>> (evalFreeArithUnfixed' alsoOneIsOne') $ ()
+True
+-}
+evalFreeArithUnfixed' ∷ ∀ a b.
+  (Object FreeArith' a, Object FreeArith' b)
+  ⇒ FreeArith' a b
+  → (a → b)
+evalFreeArithUnfixed' f = evalFreeArith $ unfixed f
+
+
+
+{- | Evaluate @FreeArith@ morphisms by first converting them via an anamorphism
+('fixed') to @FreeArith'@ morphisms.
+
+>>> :t (evalFreeArithFixed (Emb $ Lit (3 :: Int)))
+(evalFreeArithFixed (Emb $ Lit (3 :: Int))) :: () -> Int
+>>> evalFreeArithFixed (Emb $ Lit (3 :: Int)) $ ()
+3
+>>> (evalFreeArithFixed $ alsoOneIsOne) ()
+1
+>>> (evalFreeArithFixed two) $ ()
+2
+-}
+evalFreeArithFixed ∷ ∀ a b.
+  (∀ x. Object FreeArith x ⇒ Object' (->) x)
+  ⇒ FreeArith a b
+  → (a → b)
+evalFreeArithFixed f = evalFreeArith' $ fixed f

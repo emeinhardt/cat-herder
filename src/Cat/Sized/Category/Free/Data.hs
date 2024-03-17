@@ -57,14 +57,11 @@ import Cat.Sized.Functor
   , ana
   )
 
-import Cat.Sized.Semigroupoid.Class
-  ( Object
-  , Object'
-  , (.)
-  )
 import Cat.Sized.Category.Class
-  ( Category
-  , id
+  ( Category (id)
+  , (.)
+  , Object
+  , Object'
   )
 
 import Cat.Sized.Semigroupoid.Free.Data

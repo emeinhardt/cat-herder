@@ -48,16 +48,13 @@ import Cat.Sized.Functor
 
 import Cat.Sized.Semigroupoid.Class
   ( Sized ( Sized )
+  , Object
   , Object'
   )
 
 import Cat.Sized.Semigroupoid.Instances ()
 import Cat.Sized.Category.Instances ()
 
-import Cat.Sized.Semigroupoid.Free.Data
-   ( HasObject ( ObjectOf
-               )
-   )
 import Cat.Sized.Category.Free.Data
   ( Cat ( Id
         , Emb
@@ -72,6 +69,7 @@ import Cat.Sized.Category.Free.Data
   , mkAlg
   , fixed
   , unfixed
+  , HasObject ( ObjectOf )
   )
 
 import Cat.Sized.Semigroupoid.Free.Instances ()
@@ -127,7 +125,7 @@ instance HasObject φ ArithFunc where
 
 type FreeArith = Cat ArithFunc
 
-noOp ∷ (ObjectOf φ ArithFunc n a)
+noOp ∷ (Object φ FreeArith n a)
   ⇒ FreeArith φ n n a a
 noOp = Id
 
@@ -155,8 +153,8 @@ alsoOneIsOne' = boolToInt `Of` alsoOneIsOne `Of` noOp
 
 
 evalArithPrimV ∷ ∀ φ (n ∷ Nat) (m ∷ Nat) a b.
-  ( ObjectOf φ ArithFunc n a
-  , ObjectOf φ ArithFunc m b
+  ( Object φ FreeArith n a
+  , Object φ FreeArith m b
   )
   ⇒ ArithFunc    φ         n m a b
   → (Sized (->)) VS.Vector n m a b
@@ -186,8 +184,8 @@ Vector [2]
 it :: VS.Vector 1 Int
 -}
 evalFreeArith ∷ ∀ n m a b.
-  ( ObjectOf VS.Vector ArithFunc n a
-  , ObjectOf VS.Vector ArithFunc m b
+  ( Object VS.Vector FreeArith n a
+  , Object VS.Vector FreeArith m b
   )
   ⇒ FreeArith    VS.Vector n m a b
   → (Sized (->)) VS.Vector n m a b
@@ -204,7 +202,7 @@ type FreeArith' = Cat' ArithFunc
 type FreeArithF = CatF ArithFunc
 
 
-noOp' ∷ ∀ φ n a. ( ObjectOf φ ArithFunc n a )
+noOp' ∷ ∀ φ n a. ( Object φ FreeArith' n a )
   ⇒ FreeArith' φ n n a a
 noOp' = In IdF
 
@@ -240,7 +238,7 @@ Vector [True]
 it :: VS.Vector 1 Bool
 -}
 evalFreeArith' ∷ ∀ n m a b.
-  (∀ i x. ObjectOf VS.Vector ArithFunc i x ⇒ Object' VS.Vector (Sized (->)) i x)
+  (∀ i x. Object VS.Vector FreeArith' i x ⇒ Object' VS.Vector (Sized (->)) i x)
   ⇒ FreeArith'   VS.Vector n m a b
   → (Sized (->)) VS.Vector n m a b
 evalFreeArith' = cata $ mkAlg evalArithPrimV
@@ -260,8 +258,8 @@ Vector [True]
 it :: VS.Vector 1 Bool
 -}
 evalFreeArithUnfixed' ∷ ∀ n m a b.
-  ( ObjectOf VS.Vector ArithFunc n a
-  , ObjectOf VS.Vector ArithFunc m b
+  ( Object VS.Vector FreeArith' n a
+  , Object VS.Vector FreeArith' m b
   )
   ⇒ FreeArith'   VS.Vector n m a b
   → (Sized (->)) VS.Vector n m a b
@@ -286,7 +284,7 @@ Vector [2]
 it :: VS.Vector 1 Int
 -}
 evalFreeArithFixed ∷ ∀ n m a b.
-  (∀ i x. ObjectOf VS.Vector ArithFunc i x ⇒ Object' VS.Vector (Sized (->)) i x)
+  (∀ i x. Object VS.Vector FreeArith i x ⇒ Object' VS.Vector (Sized (->)) i x)
   ⇒ FreeArith    VS.Vector n m a b
   → (Sized (->)) VS.Vector n m a b
 evalFreeArithFixed = evalFreeArith' <<< fixed

@@ -11,6 +11,7 @@ module Cat.Sized.Category.Class
   , (<<<)
   , (∘)
   , (⊙)
+  , Object'
 
   , Sub ( Sub, unSub )
   , sub
@@ -46,6 +47,7 @@ import Cat.Sized.Semigroupoid.Class
   , (<<<)
   , (∘)
   , (⊙)
+  , Object'
   , Sub ( Sub, unSub )
   , sub
   , unsub

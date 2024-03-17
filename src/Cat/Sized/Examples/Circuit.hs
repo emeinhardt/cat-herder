@@ -254,6 +254,7 @@ import Cat.Sized.Semigroupoid.Class
   )
 import Cat.Sized.Category.Class
   ( id
+  , Object
   )
 import Cat.Sized.Monoidal.Class
   ( (***)
@@ -1771,8 +1772,8 @@ Vector [True]
 See 'foldMap' in "Cat.Sized.Cartesian.Free.Data".
 -}
 eval ∷ ∀ n m a b.
-  ( ObjectOf VS.Vector Circuit n a
-  , ObjectOf VS.Vector Circuit m b
+  ( Object VS.Vector FreeCircuit n a
+  , Object VS.Vector FreeCircuit m b
   )
   ⇒ a -| FreeCircuit  VS.Vector n m |-> b
   → a -| (Sized (->)) VS.Vector n m |-> b
@@ -1793,8 +1794,8 @@ Vector [True]
 Vector [True]
 -}
 eval' ∷ ∀ n m a b.
-  ( ObjectOf VS.Vector Circuit n a
-  , ObjectOf VS.Vector Circuit m b
+  ( Object VS.Vector FreeCircuit n a
+  , Object VS.Vector FreeCircuit m b
   )
   ⇒ a -| FreeCircuit VS.Vector n m |-> b
   → (VS.Vector n a → VS.Vector m b)

@@ -38,10 +38,6 @@
     pattern functors should be expressible in terms of `ana`/`cata`. Figure out
     what needs to happen with constraints (or use of continuations +
     existentially quantified sizes, or ...) to make this work correctly.
-      - Propagate/translate what works for @Cat.Sized.Category.Free.Data@ to
-        @Cat.Unsized.Category.Free.Data@.
-        - Work out the smallest unit of success in
-          @Cat.Unsized.Category.Free.Instances@ first...
       - Propagate what works for @Cat.Sized.Category.Free.Data@ to
         @Cat.Sized.Monoidal.Free.Data@ + further upstream classes.
 

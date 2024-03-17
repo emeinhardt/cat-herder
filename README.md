@@ -377,7 +377,7 @@ type RazorTerm = Cat Razor
 -- Example terms:
 
 -- | ≈ @Prelude.id@
-noOp :: (ObjectOf Razor a)
+noOp :: (Object RazorTerm a)
   => RazorTerm a a
 noOp = Id
 
@@ -437,11 +437,7 @@ it :: Bool
 it :: Int
 -}
 evalRazorTerm :: forall a b.
-  ( -- Any of the next three pairs of constraints suffice:
-    RazorObj a, RazorObj b
-    -- ObjectOf Razor a, ObjectOf Razor b
-    -- Object RazorTerm a, Object RazorTerm b
-  )
+  (Object RazorTerm a, Object RazorTerm b)
   => RazorTerm a b -> (a -> b)
 evalRazorTerm = foldMap evalRazor
 ```
@@ -492,7 +488,7 @@ Cat.Unsized.Category.Free.Data -}
 type RazorTerm' = Cat' Razor
 
 -- | ≈ @id@
-noOp' :: (ObjectOf Razor a)
+noOp' :: (Object RazorTerm' a)
   => RazorTerm' a a
 noOp' = In IdF
 
@@ -729,8 +725,8 @@ Vector [True]
 See 'foldMap' in "Cat.Sized.Cartesian.Free.Data".
 -}
 eval :: forall n m a b.
-  ( ObjectOf VS.Vector Circuit n a
-  , ObjectOf VS.Vector Circuit m b
+  ( Object VS.Vector FreeCircuit n a
+  , Object VS.Vector FreeCircuit m b
   )
   => a -| FreeCircuit  VS.Vector n m |-> b
   -> a -| (Sized (->)) VS.Vector n m |-> b
@@ -749,8 +745,8 @@ Vector [True]
 Vector [True]
 -}
 eval' :: forall n m a b.
-  ( ObjectOf VS.Vector Circuit n a
-  , ObjectOf VS.Vector Circuit m b
+  ( Object VS.Vector FreeCircuit n a
+  , Object VS.Vector FreeCircuit m b
   )
   => a -| FreeCircuit VS.Vector n m |-> b
   -> (VS.Vector n a -> VS.Vector m b)
