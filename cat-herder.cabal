@@ -249,7 +249,10 @@ library
   exposed-modules:
     Cat
 
+
     Cat.Operators
+    Cat.GraphViz
+
     Cat.Orthotope
     Cat.Orthotope.Extras
     Cat.VectorSized
@@ -454,3 +457,5 @@ library
     -- -- , algebra
     -- -- , semirings
     -- -- , semiring-num
+
+    , language-dot

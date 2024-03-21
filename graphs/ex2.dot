@@ -1,0 +1,17 @@
+digraph {
+  margin=0
+  compound=true
+  rankdir="LR"
+  node [shape=Mrecord]
+  // edge [fontsize=8, fontcolor=indigo]
+  // bgcolor=transparent
+  nslimit=20
+  // ratio=1
+  // ranksep=1.0
+  // fixedsize=true
+  0 [label="{ { <i0> } | id 1 | { <o0> } } "]
+  1 [label="{ { <i0> } | not 1 | { <o0> } }"]
+  2 [label="{ { <i0> | <i1> } | or 2 | { <o0> | <o1> } }"]
+  0:o0 -> 2:i1
+  1:o0 -> 2:i0
+}
