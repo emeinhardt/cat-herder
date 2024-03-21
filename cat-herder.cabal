@@ -275,6 +275,7 @@ library
     Cat.Unsized.Category.Free
     Cat.Unsized.Category.Free.Data
     Cat.Unsized.Category.Free.Instances
+    Cat.Unsized.Category.Free.TTG
 
 
     Cat.Sized
@@ -300,6 +301,7 @@ library
     Cat.Sized.Category.Free
     Cat.Sized.Category.Free.Data
     Cat.Sized.Category.Free.Instances
+    Cat.Sized.Category.Free.TTG
 
     Cat.Sized.Monoidal
     Cat.Sized.Monoidal.Class

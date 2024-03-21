@@ -73,7 +73,7 @@ data Cat (k ∷ κ → κ → Type) (a ∷ κ) (b ∷ κ) where
       → a -| Cat k |-> b
   Id  ∷ ( ObjectOf k a
         )
-      ⇒ Cat k a a
+      ⇒ a -| Cat k |-> a
   Of  ∷ ( ObjectOf k a
         , ObjectOf k b
         , ObjectOf k c
