@@ -1236,6 +1236,8 @@ __Current status:__
  - To support evaluation and testing/development, there are two main product
    functors (from `sized-vectors` and `orthotope`) available for use with `->`
    that have instances for most of the `cat-herder` hierarchy.
+ - There is support for trees-that-grow variants of the basic free category
+   types, with an example use case for pretty-printing to GraphViz.
 
 
  1. __GraphViz__. Functionality for generating graphviz diagrams of free paths
