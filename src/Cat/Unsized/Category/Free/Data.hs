@@ -34,6 +34,8 @@ import Prelude hiding
   ( id
   , (.)
   , foldMap
+  , head
+  , last
   )
 
 import Data.Kind (Type)
@@ -88,8 +90,7 @@ deriving instance (∀ x y. Show (x `k` y)) ⇒ Show (a -| Cat k |-> b)
 
 
 foldMap ∷ ∀ k t a b.
-        (
-          ObjectOf k a, ObjectOf k b
+        ( ObjectOf k a, ObjectOf k b
         , ∀ o. ObjectOf k o ⇒ Object' t o
         , Category (Cat k), Category t
         )
@@ -111,8 +112,8 @@ fixed' ∷ ∀ k a b.
   ( ObjectOf k a, ObjectOf k b
   , ∀ x. ObjectOf k x ⇒ Object' (Cat' k) x
   )
-  ⇒ a -| Cat  k |-> b  -- ^ A @Cat k@ morphism.
-  → a -| Cat' k |-> b  -- ^ An equivalent morphism in @Fix (CatF k)@.
+  ⇒ a -| Cat  k |-> b        -- ^ A @Cat k@ morphism.
+  → a -| Cat' k |-> b        -- ^ An equivalent morphism in @Fix (CatF k)@.
 fixed' Id         = In IdF
 fixed' (Emb m)    = In (EmbF m)
 fixed' (g `Of` f) = In (fixed' g `OfF` fixed' f)

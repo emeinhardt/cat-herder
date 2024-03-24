@@ -13,8 +13,8 @@ everything one might want to know about why things are the way they are in the
 module: for example, the role of object constraints and how the 'HasObject'
 typeclass (or the 'ObjectOf' associated type synonym) link a primitive morphism
 to the object constraints for a free category type. For deeper exposition on
-details like this, see the introduction to Boolean circuits (combinational
-logic) in "Cat.Sized.Examples.Circuit" or the discussion in the README. -}
+details like this, see the Boolean circuits (combinational logic) module
+"Cat.Sized.Examples.Circuit" or the discussion in the README. -}
 
 module Cat.Unsized.Examples.Arith where
 
@@ -36,6 +36,10 @@ import Cat.Unsized.Functor
 import Cat.Unsized.Category.Class
   ( Object
   , Object'
+  , Semigroupoid
+  , Category
+  , (.)
+  , id
   )
 
 import Cat.Unsized.Category.Free.Data
@@ -59,6 +63,26 @@ import Cat.Unsized.Category.Free.Data
 import Cat.Unsized.Category.Instances ()
 import Cat.Unsized.Category.Free.Instances ()
 
+import Cat.Unsized.Category.Free.TTG qualified as TTG
+import Cat.Unsized.Category.Free.TTG
+  ( noExt
+  , NoField ( NoField )
+  )
+
+import Cat.Unsized.GraphViz
+  ( catGraph
+  , catGraph'
+  , reNodeId
+  , reNodeId'
+  , GV
+  , RankDir
+  )
+
+import Data.Void (Void)
+
+import Language.Dot
+  ( Graph
+  )
 
 
 data ArithFunc a b where
@@ -239,7 +263,7 @@ evalFreeArithUnfixed' ∷ ∀ a b.
   (Object FreeArith' a, Object FreeArith' b)
   ⇒ FreeArith' a b
   → (a → b)
-evalFreeArithUnfixed' f = evalFreeArith $ unfixed f
+evalFreeArithUnfixed' = evalFreeArith . unfixed
 
 
 
@@ -260,3 +284,259 @@ evalFreeArithFixed ∷ ∀ a b.
   ⇒ FreeArith a b
   → (a → b)
 evalFreeArithFixed f = evalFreeArith' $ fixed f
+
+
+
+-- Trees That Grow + GraphViz
+
+
+{- | @FreeArithX@ ≅ @FreeArith@: The phase index is @Void@, and — per the @X____@
+type family instances — there are no extension fields and no extension
+constructor.
+
+Instrumentally, @FreeArithX@ is a convenient but not strictly necessary bridge
+into any other "trees-that-grow"-based free category type; it's presented here as
+the simplest possible trees-that-grow variant. -}
+type FreeArithX  = TTG.Cat  Void ArithFunc
+
+{- | @FreeArithT'@ ≅ @FreeArith'@. -}
+type FreeArithT' = TTG.Cat' Void ArithFunc
+
+{- | @FreeArithFT@ ≅ @FreeArithF@. -}
+type FreeArithFT = TTG.CatF Void ArithFunc
+
+
+type instance TTG.XEmb  Void = TTG.NoField
+type instance TTG.XId   Void = TTG.NoField
+type instance TTG.XOf   Void = TTG.NoField
+type instance TTG.XXCat Void = TTG.NoExt
+
+
+
+instance Semigroupoid FreeArithX where
+  type Object FreeArithX a = ObjectOf ArithFunc a
+  g . f = TTG.Of NoField g f
+
+
+instance Category FreeArithX where
+  id = TTG.Id NoField
+
+
+instance Semigroupoid (FreeArithFT FreeArithT') where
+  type Object (FreeArithFT FreeArithT') a = ObjectOf ArithFunc a
+  g . f = TTG.OfF NoField (In g) (In f)
+
+
+instance Category (FreeArithFT FreeArithT') where
+  id = TTG.IdF NoField
+
+
+
+{- | Map a 'FreeArith' value into its "trees that grow" equivalent. -}
+grow ∷ ∀ a b. FreeArith a b → FreeArithX a b
+grow Id         = TTG.Id  NoField
+grow (Emb k)    = TTG.Emb NoField k
+grow (g `Of` f) = TTG.Of  NoField (grow g) (grow f)
+
+
+{- | Map a "trees that grow" 'FreeArithX' value into its more basic 'FreeArith' form. -}
+shrink ∷ ∀ a b. FreeArithX a b → FreeArith a b
+shrink (TTG.Id  _    ) = Id
+shrink (TTG.Emb _ k  ) = Emb k
+shrink (TTG.Of  _ g f) = shrink g `Of` shrink f
+
+
+{- | Map a @FreeArith'@ value into its "trees that grow" equivalent. -}
+grow' ∷ ∀ a b. FreeArith' a b → FreeArithT' a b
+grow' = cata $ mkAlg (In . TTG.EmbF TTG.NoField)
+
+
+{- | Map a "trees that grow" @FreeArithT'@ value into its more basic @FreeArith'@
+form. -}
+shrink' ∷ ∀ a b. FreeArithT' a b → FreeArith' a b
+shrink' = cata $ TTG.mkAlg noExt (In . EmbF)
+
+
+
+{- | @FreeArithG@ ≅ @FreeArith@ ≅ @CatG ArithFunc@: The phase index is @GV@
+("GraphViz"), and — per the @X____@ type family instances in
+"Cat.Unsized.GraphViz" — there are extension fields containing auxiliary
+annotations useful for rendering a free category term as a GraphViz expression. -}
+type FreeArithG  = TTG.Cat  GV ArithFunc  -- ≡ GV.CatG  ArithFunc
+
+
+{- | @FreeArithG'@ ≅ @FreeArith'@ ≅ @CatG' ArithFunc@. -}
+type FreeArithG' = TTG.Cat' GV ArithFunc  -- ≡ GV.CatG' ArithFunc
+
+
+{- | @FreeArithFT@ ≅ @FreeArithF@ ≅ @CatFG ArithFunc@. -}
+type FreeArithFG = TTG.CatF GV ArithFunc
+
+
+
+{- | Change the extension field type from @NoField@ to an annotation type for
+pretty-printing to GraphViz. -}
+graphExt ∷ ∀ a b. FreeArithX a b → FreeArithG a b
+graphExt = TTG.foldMap noExt (TTG.Emb Nothing)
+
+
+{- | Convert a @FreeArith@ value to a
+@[language-dot](https://hackage.haskell.org/package/language-dot)@ 'Graph'
+AST.
+
+>>> import Language.Dot
+>>> import Text.Pretty.Simple ( pPrint )
+>>> import Cat.Unsized.GraphViz ( RankDir (TB) )
+>>> pPrint $ toGraph TB alsoOne
+Graph UnstrictGraph DirectedGraph Nothing
+    [ AssignmentStatement
+        ( StringId "margin" )
+        ( IntegerId 0 )
+    , AssignmentStatement
+        ( StringId "compound" )
+        ( StringId "true" )
+    , AssignmentStatement
+        ( StringId "nslimit" )
+        ( IntegerId 20 )
+    , AttributeStatement NodeAttributeStatement
+        [ AttributeSetValue
+            ( StringId "shape" )
+            ( StringId "Mrecord" )
+        ]
+    , NodeStatement
+        ( NodeId
+            ( IntegerId 0 ) Nothing
+        )
+        [ AttributeSetValue
+            ( StringId "label" )
+            ( StringId "{ { <i0> } | Dec | { <o0> } }" )
+        ]
+    , NodeStatement
+        ( NodeId
+            ( IntegerId 1 ) Nothing
+        )
+        [ AttributeSetValue
+            ( StringId "label" )
+            ( StringId "{ { <i0> } | Lit 2 | { <o0> } }" )
+        ]
+    , EdgeStatement
+        [ ENodeId NoEdge
+            ( NodeId
+                ( IntegerId 1 )
+                ( Just
+                    ( PortI
+                        ( StringId "o0" ) Nothing
+                    )
+                )
+            )
+        , ENodeId DirectedEdge
+            ( NodeId
+                ( IntegerId 0 )
+                ( Just
+                    ( PortI
+                        ( StringId "i0" ) Nothing
+                    )
+                )
+            )
+        ] []
+    ]
+>>> prettyPrintDot $ toGraph TB alsoOne
+digraph {
+  "margin"=0
+  "compound"="true"
+  "nslimit"=20
+  node ["shape"="Mrecord"]
+  0 ["label"="{ { <i0> } | Dec | { <o0> } }"]
+  1 ["label"="{ { <i0> } | Lit 2 | { <o0> } }"]
+  1:"o0" -> 0:"i0"
+}
+-}
+toGraph ∷ ∀ a b. RankDir → FreeArith a b → Graph
+toGraph d = catGraph d
+          . reNodeId
+          . graphExt
+          . grow
+
+
+{- | Change the extension field type from @NoField@ to an annotation type for
+pretty-printing to GraphViz. -}
+graphExt' ∷ ∀ a b. FreeArithT' a b → FreeArithG' a b
+graphExt' = cata $ TTG.mkAlg noExt (In . TTG.EmbF Nothing)
+
+
+{- | Convert a @FreeArith'@ value to a
+@[language-dot](https://hackage.haskell.org/package/language-dot)@ 'Graph'
+AST.
+
+>>> import Language.Dot
+>>> import Text.Pretty.Simple ( pPrint )
+>>> import Cat.Unsized.GraphViz ( RankDir (TB) )
+>>> pPrint $ toGraph' TB alsoOne'
+Graph UnstrictGraph DirectedGraph Nothing
+    [ AssignmentStatement
+        ( StringId "margin" )
+        ( IntegerId 0 )
+    , AssignmentStatement
+        ( StringId "compound" )
+        ( StringId "true" )
+    , AssignmentStatement
+        ( StringId "nslimit" )
+        ( IntegerId 20 )
+    , AttributeStatement NodeAttributeStatement
+        [ AttributeSetValue
+            ( StringId "shape" )
+            ( StringId "Mrecord" )
+        ]
+    , NodeStatement
+        ( NodeId
+            ( IntegerId 0 ) Nothing
+        )
+        [ AttributeSetValue
+            ( StringId "label" )
+            ( StringId "{ { <i0> } | Dec | { <o0> } }" )
+        ]
+    , NodeStatement
+        ( NodeId
+            ( IntegerId 1 ) Nothing
+        )
+        [ AttributeSetValue
+            ( StringId "label" )
+            ( StringId "{ { <i0> } | Lit 2 | { <o0> } }" )
+        ]
+    , EdgeStatement
+        [ ENodeId NoEdge
+            ( NodeId
+                ( IntegerId 1 )
+                ( Just
+                    ( PortI
+                        ( StringId "o0" ) Nothing
+                    )
+                )
+            )
+        , ENodeId DirectedEdge
+            ( NodeId
+                ( IntegerId 0 )
+                ( Just
+                    ( PortI
+                        ( StringId "i0" ) Nothing
+                    )
+                )
+            )
+        ] []
+    ]
+>>> prettyPrintDot $ toGraph' TB alsoOne'
+digraph {
+  "margin"=0
+  "compound"="true"
+  "nslimit"=20
+  node ["shape"="Mrecord"]
+  0 ["label"="{ { <i0> } | Dec | { <o0> } }"]
+  1 ["label"="{ { <i0> } | Lit 2 | { <o0> } }"]
+  1:"o0" -> 0:"i0"
+}
+-}
+toGraph' ∷ ∀ a b. RankDir → FreeArith' a b → Graph
+toGraph' d = catGraph' d
+           . reNodeId'
+           . graphExt'
+           . grow'

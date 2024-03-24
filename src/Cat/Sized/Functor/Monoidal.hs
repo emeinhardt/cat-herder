@@ -398,7 +398,7 @@ class (MonoidalEndo γ φ k)
 
   {- | Default:
 
-  >>> traverse ≝ sequence ⊙ fmap f
+  >>> traverse f ≝ sequence ⊙ fmap f
   -}
   traverse ∷ ∀ (η ∷ κ → κ) (n ∷ Nat) (m ∷ Nat) (a ∷ κ) (b ∷ κ).
            ( KnownNat n, KnownNat m

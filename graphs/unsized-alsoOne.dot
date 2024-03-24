@@ -1,0 +1,10 @@
+digraph {
+  "margin"=0
+  "compound"="true"
+  // "rankdir"="LR"
+  "nslimit"=20
+  node ["shape"="Mrecord"]
+  0 ["label"="{ { <i0> } | Dec | { <o0> } }"]
+  1 ["label"="{ { <i0> } | Lit 2 | { <o0> } }"]
+  1:"o0" -> 0:"i0"
+}

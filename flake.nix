@@ -25,6 +25,7 @@
               };
               shell.buildInputs = with pkgs; [
                 just
+                graphviz
               ];
             };
         })

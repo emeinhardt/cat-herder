@@ -541,6 +541,17 @@ evalRazorTerm' = cata $ mkAlg evalRazor
 ```
 
 
+In addition to support for recursion schemes, there is also (currently limited)
+support for annotating free category values with the 
+[trees that grow](https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/trees-that-grow-guidance)
+approach. While not detailed further here for brevity, we can use that to pretty-print AST terms
+to GraphViz. Below are renderings of `alsoOne`, `oneIsOne`, and `alsoOneIsOne`:
+
+![alsoOne](./graphs/unsized-alsoOne.dot.svg)
+![oneIsOne](./graphs/unsized-oneIsOne.dot.svg)
+![alsoOneIsOne](./graphs/unsized-alsoOneIsOne.dot.svg)
+
+
 
 ### Boolean circuits
 
@@ -1228,7 +1239,7 @@ __Current status:__
 
 
  1. __GraphViz__. Functionality for generating graphviz diagrams of free paths
-    (DSL terms) like that available in `concat`.
+    (DSL terms).
  2. __Simpler API__. Simplify typeclass constraints; move concrete instances
     with dependencies outside of base into separate modules (and eventually
     separate packages); eliminate kind polymorphism from most typeclasses;
@@ -1271,14 +1282,11 @@ typeclasses with reasonable ergonomics.
  1. Support for [modeling incremental computation via a generalized notion of a
     derivative](https://arxiv.org/abs/2002.05256).
  2. Support for traced categories.
- 3. Support for closed categories, including 
- 
-    - The interface for closed categories with representable
-      applicative product functors described in
-      [Elliott's paper on automatic differentiation](https://arxiv.org/pdf/1804.00746.pdf#page=21).
-    - An example module with an implementation of *some*thing comparable to a 
+ 3. Support for closed categories, including:
+    - An example module with an implementation of *some*thing comparable to a
       variation on lambda calculus (modulo the restrictions of this package's
-      focus on finitary, homogeneously-typed products).
+      focus on finitary, homogeneously-typed products) - stack machine based on
+      BCKW calculus?
  4. Better support for categories with one object / maybe internal categories 
     more generally, mostly for the purpose of figuring out how to appropriately
     integrate many familiar and useful typeclasses capturing algebraic

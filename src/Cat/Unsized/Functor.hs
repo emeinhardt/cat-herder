@@ -3,6 +3,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- |
 
 module Cat.Unsized.Functor
@@ -21,6 +22,7 @@ module Cat.Unsized.Functor
   , Fix (In, out)
   , cata
   , ana
+  , K (K, unK)
   ) where
 
 import Prelude hiding
@@ -141,7 +143,7 @@ class ( Category r, Category t
 arrows. No thought has yet been given to its interaction with e.g.
 @Distributive@, @Traversable@, etc. -}
 class (Functor φ k k, Functor γ k k) ⇒ Distributes φ γ k where
-  dist ∷ (Object k (φ (γ a)), Object k(γ (φ a)))
+  dist ∷ (Object k (φ (γ a)), Object k (γ (φ a)))
        ⇒ φ (γ a) `k` γ (φ a)
 
 
@@ -223,3 +225,7 @@ ana ∷ ∀ η q a b.
     ⇒ q ::~> η q         -- ^ A coalgebra for /η q/.
     → q a b → Fix η a b
 ana coalg = In ∘ hfmap (ana coalg) ∘ coalg
+
+
+newtype K a x y = K { unK ∷ a }
+  deriving stock (Show, Eq, Ord, Bounded, Generic, F.Functor, Foldable)

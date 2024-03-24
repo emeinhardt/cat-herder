@@ -1,0 +1,15 @@
+digraph {
+  "margin"=0
+  "compound"="true"
+  "nslimit"=20
+  node ["shape"="Mrecord"]
+  0 ["label"="{ { <i0> } | Ite 0 1 | { <o0> } }"]
+  1 ["label"="{ { <i0> } | EqlTo 1 | { <o0> } }"]
+  2 ["label"="{ { <i0> } | Dec | { <o0> } }"]
+  3 ["label"="{ { <i0> } | Lit 2 | { <o0> } }"]
+  4 ["label"="{ { <i0> } | Id | { <o0> } }"]
+  4:"o0" -> 3:"i0"
+  1:"o0" -> 0:"i0"
+  2:"o0" -> 1:"i0"
+  3:"o0" -> 2:"i0"
+}

@@ -249,7 +249,9 @@ library
   exposed-modules:
     Cat
 
+
     Cat.Operators
+
     Cat.Orthotope
     Cat.Orthotope.Extras
     Cat.VectorSized
@@ -261,6 +263,8 @@ library
     Cat.Unsized.Monad
     Cat.Unsized.Comonad
     Cat.Unsized.Bikleisli
+
+    Cat.Unsized.GraphViz
 
     Cat.Unsized.Semigroupoid
     Cat.Unsized.Semigroupoid.Class
@@ -456,3 +460,5 @@ library
     -- -- , algebra
     -- -- , semirings
     -- -- , semiring-num
+
+    , language-dot

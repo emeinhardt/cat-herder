@@ -15,6 +15,7 @@ alias t := tags
 alias hg := hoog
 alias hd := hadd
 alias n := nbuild
+alias g := graphs
 
 cbuild:
   cabal build
@@ -42,3 +43,7 @@ hadd:
 
 hoog:
   ./dev/hoogle-open.sh
+
+# Generate an svg for every .dot file in the graphs folder
+graphs:
+  dot -O -Tsvg ./graphs/*.dot

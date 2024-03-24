@@ -1,5 +1,22 @@
 = Current stack
 
+== GraphViz/TTG
+
+- Baseline for further evaluation of TTG + documentation example for recursion
+  schemes with higher-order functors:
+    - Add (co)algebras for calculating number of atomic arrows in a free (unsized)
+      category.
+- Write 'Cat.Sized.Category.Free.TTG' + 'Cat.Sized.Category.Free.GraphViz' +
+  update 'Cat.Sized.Arith'.
+- Write 'Cat.Sized.Monoidal.Free.TTG' + 'Cat.Sized.Monoidal.Free.GraphViz' +
+  variants for 'Braided' and 'Cartesian' + update 'Cat.Sized.Circuit'.
+- Consider some way of refactoring the proliferation of 'TTG' ± 'GraphViz'
+  modules
+    — Could a variation on "type-aligned sequences" generalize across
+      classes?
+    - Would a datatypes-a-la-carte products-of-functors approach generalize
+      better/increase code reuse compared to TTG?
+
 == Finish tensors
 
 - instance SrN Monoidal...
@@ -8,7 +25,8 @@
 
   - Either move monadic (nested product) combinators to a subclass (refactoring
     headache with low apparent value right now), or shove 'Sr2' into its own
-    module as it is, because 'SrN' ought to do everything 'Sr2' can.
+    module as it is, because 'SrN' ought to do everything 'Sr2' can and 'Sr2'
+    is just a development stepping-stone to something like 'SrN'.
 
 
 = Anytime dead code cleanup/maintenance
@@ -26,9 +44,8 @@
 
 = Foundations / high-value experiments
 
-1. Sort out what the relevant constraints on foldMap should be by comparing
- - Cat.Unsized.Semigroupoid.Free.Data
- - Cat.Unsized.Category.Free.Data
+1. Sort out what the relevant constraints on foldMap should be and make it
+consistent across modules for free category types.
 
 2. Bimonoidal
  - Revisit Cat.Sized.Circuit with Cat.Sized.Cartesian.Free
@@ -64,6 +81,12 @@
   a module separate from '_.Functor'.
     - Expected payoff might increase with the volume/complexity of future code
       that depends on recursion schemes.
+      - Example/experiment within reach: GraphViz pretty-printing requires an
+        annotation step currently implemented with a (vanilla) state monad over
+        the binary tree AST of a free category type; an alternative is an
+        effectful anamorphism that ought to be preceded by introducing an
+        @HMonad@ class.
+
 
 
 
